@@ -14,32 +14,39 @@
     <body>
       <header>
       <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-          <a class="navbar-brand" id="brand" href="#">
-            <img src="{%static 'login/gfx.svg'%}" alt="" width="50" height="50" class="d-inline-block align-text-middle">
-            العيادة الملكية
-          </a>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="/login">Login</a>
-              </li>
-            </ul>
-            <div class="form-check form-switch me-2">
-              <input class="form-check-input" type="checkbox" id="your-darkmode-button-id">
-              <label class="form-check-label" for="flexSwitchCheckDefault">Dark mode</label>
+          <div class="container-fluid">
+            <a class="navbar-brand" id="brand" href="#">
+              <img src="{%static 'login/gfx.svg'%}" alt="" width="50" height="50" class="d-inline-block align-text-middle">
+              العيادة الملكية
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                  <a class="nav-link active" aria-current="page" href="/login">Login</a>
+                </li>
+              </ul>
+              <div class="form-check form-switch me-2">
+                <input class="form-check-input" type="checkbox" id="your-darkmode-button-id">
+                <label class="form-check-label" for="flexSwitchCheckDefault">Dark mode</label>
+              </div>
             </div>
           </div>
+        </nav>
+      </header>
+      <main>
+        {%block content%}
+        {%endblock%}
+      </main>
+      <footer class="bg-light text-center text-lg-start fixed-bottom">
+        <!-- Copyright -->
+        <div class="text-center bg-light p-3" >
+          Developed by Mohamed Tamer
         </div>
-      </nav>
-    </header>
-    <main>
-      {%block content%}
-      {%endblock%}
-    </main>
+        <!-- Copyright -->
+      </footer>
       <script>
         document.querySelector("#your-darkmode-button-id").onclick = function(e){
           darkmode.toggleDarkMode();
