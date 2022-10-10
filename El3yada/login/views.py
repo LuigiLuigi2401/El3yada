@@ -8,7 +8,13 @@ class PasswordForm(forms.Form):
     password = forms.CharField(label="",max_length=20,widget=forms.PasswordInput(attrs={'class': "form-control","id" : "password"}))
 
 # Create your views here.
-def index(request):
+def login(request):
     username = NameForm()
     password = PasswordForm()
-    return render(request,"login/index.html",{'form': username,'form2':password})
+    return render(request,"login.html",{'form': username,'form2':password})
+
+def index(request):
+    if request.method == "POST":
+        post = request.POST
+        return render(request,"index.html",{"username":post["username"]})
+    return render(request,"index.html")

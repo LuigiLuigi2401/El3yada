@@ -1,8 +1,8 @@
-{%extends 'login/layout.html' %}
+{%extends 'layout.html' %}
 {%block content%}
       <h1 class="text-center">Login</h1>
       <div class="container justify-content-center col-sm-5 ">
-        <form action="/MainMenu/" method="post">
+        <form action="/" method="post">
           {% csrf_token %}
           <div class="mb-3">
             <label for="username" class="form-label">Username</label>
