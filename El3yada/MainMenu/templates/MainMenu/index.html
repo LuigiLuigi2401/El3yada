@@ -1,0 +1,22 @@
+{%extends 'layout.html' %}
+{%load crispy_forms_tags%}
+{%block content%}
+      {%if username%}
+      <h1 class="text-center">Welcome, {{username}}</h1>
+      {%else%}
+      <h1 class="text-center">Welcome</h1>
+      <!-- Registration -->
+      <div class="container content-section">
+            <form method="post">
+                  {%csrf_token%}
+                  <fieldset class="form-group">
+                        <legend class="border-bottom mb-4">Add Users</legend>
+                        {{form|crispy}}
+                  </fieldset>
+                  <div class="text-center">
+                        <input type="submit" class="btn btn-primary" value="Log In">
+                  </div>
+            </form>
+      </div>
+      {%endif%}
+{%endblock%}
