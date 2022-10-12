@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-jfg+638$)g9n=1w^un7lpd=e-8cw5%k&l_27y-5a4he!&^k!kw
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.1.7","192.168.1.3"]
+ALLOWED_HOSTS = ["192.168.1.7","102.40.16.31"]
 
 
 # Application definition
@@ -133,3 +133,5 @@ STATICFILES_DIRS = [
     '/static/',
 ]
 
+LOGIN_REDIRECT_URL = "index"
+LOGIN_URL = 'login'

@@ -1,11 +1,22 @@
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
-def index(request):
+@login_required
+def AddUsers(request):
     if request.method == "POST":
-        post = request.POST
-        return render(request,"MainMenu/index.html",{"username":post["username"]})
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get("username")
+            messages.success(request,f'Account Created For {username}!')
+            return redirect('login')
     form = UserCreationForm()
-    return render(request,"MainMenu/index.html",{"form":form})
+    return render(request,"MainMenu/AddUsers.html",{"form":form})
+
+@login_required
+def index(request):
+    return render(request,"MainMenu/index.html")
