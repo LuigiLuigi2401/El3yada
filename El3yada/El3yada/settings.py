@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-jfg+638$)g9n=1w^un7lpd=e-8cw5%k&l_27y-5a4he!&^k!kw
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.1.7","102.40.16.31"]
+ALLOWED_HOSTS = ["102.40.16.31","196.218.217.252","192.168.1.5"]
 
 
 # Application definition
@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'login',
     'MainMenu',
     'crispy_forms',
+    'import_export',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,6 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
+
+IMPORT_EXPORT_USE_TRANSACTIONS = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

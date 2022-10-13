@@ -3,6 +3,13 @@
 {%block content%}
       <h1 class="text-center">Welcome</h1>
       <!-- Login -->
+      <div class="container">
+        {%if messages%}
+        {%for message in messages%}
+              <div class="alert alert-{{message.tags}} text-center">{{message}}</div>
+        {%endfor%}
+        {%endif%}
+        </div>
       <div class="container content-section">
             <form method="post">
                   {%csrf_token%}
