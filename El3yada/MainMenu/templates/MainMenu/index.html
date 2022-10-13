@@ -9,8 +9,8 @@
       {%endfor%}
       {%endif%}
       </div>
-      <div class="container-fluid mt-3">
-            <table class="table table-bordered">
+      <div class="container-fluid table-responsive mt-3">
+            <table class="table table-sm table-bordered">
                   <tr>
                     <th>Aser</th>
                     <th>Pser</th>
@@ -34,12 +34,18 @@
                     <th>MoneyBy</th>
                     <th>MoneyNo</th>
                   </tr>
-            {%if list%}
-                  <tr>
-                  {%for item in list%}
-                        <td>{{item}}</td>
+            {%if lists%}
+                  {%for list in lists%}
+                        <tr>
+                        {%for item in list%}
+                              {%if item is None%}
+                              <td></td>
+                              {%else%}
+                              <td>{{item}}</td>
+                              {%endif%}
+                        {%endfor%}
+                        </tr>
                   {%endfor%}
-                  </tr>
             {%endif%}
       </div>
 {%endblock%}

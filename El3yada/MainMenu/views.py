@@ -20,9 +20,11 @@ def AddUsers(request):
 
 @login_required
 def index(request):
-    first = appointments.objects.all()[:1].get()
-    listofvars = []
-    for var in vars(first):
-        listofvars.append(getattr(first,var))
-    listofvars = listofvars[2:]
-    return render(request,"MainMenu/index.html",{"list":listofvars})
+    listofvars=[]
+    for count,object in enumerate(appointments.objects.all()):
+        listofvars.append([])
+        for var in vars(object):
+            listofvars[count].append(getattr(object,var))
+        listofvars[count] = listofvars[count][2:]    
+    print(listofvars)
+    return render(request,"MainMenu/index.html",{"lists":listofvars})
