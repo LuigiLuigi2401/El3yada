@@ -9,4 +9,37 @@
       {%endfor%}
       {%endif%}
       </div>
+      <div class="container">
+            <table>
+                  <tr>
+                    <th>Aser</th>
+                    <th>Pser</th>
+                    <th>Aname</th>
+                    <th>Aphone</th>
+                    <th>Atel</th>
+                    <th>Adate</th>
+                    <th>ServNo</th>
+                    <th>Arem</th>
+                    <th>Arraive</th>
+                    <th>DocNo</th>
+                    <th>DocName</th>
+                    <th>Fees</th>
+                    <th>Cost</th>
+                    <th>Seen</th>
+                    <th>DoneBy</th>
+                    <th>Per</th>
+                    <th>AMPMCode</th>
+                    <th>AMPM</th>
+                    <th>ContrC</th>
+                    <th>MoneyBy</th>
+                    <th>MoneyNo</th>
+                  </tr>
+            {%if list%}
+                  <tr>
+                  {%for item in list%}
+                        <td>{{item}}</td>
+                  {%endfor%}
+                  </tr>
+            {%endif%}
+      </div>
 {%endblock%}

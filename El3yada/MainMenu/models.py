@@ -1,9 +1,4 @@
 from django.db import models
-from pyexcel_xlsx import get_data
-# data = get_data("MainMenu/App.xlsx",row_limit=5)
-# data['App'] = data['App'][1:]
-# print(data['App'])
-# Create your models here.
 class appointments(models.Model):
     Aser = models.IntegerField(unique=True,null=True)
     Pser = models.IntegerField(null=True)

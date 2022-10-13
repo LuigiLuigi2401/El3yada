@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
+from MainMenu.models import appointments
 from django.contrib.auth.decorators import login_required
 
 # Create your views here.
@@ -19,4 +20,9 @@ def AddUsers(request):
 
 @login_required
 def index(request):
-    return render(request,"MainMenu/index.html")
+    first = appointments.objects.all()[:1].get()
+    listofvars = []
+    for var in vars(first):
+        listofvars.append(getattr(first,var))
+    listofvars = listofvars[2:]
+    return render(request,"MainMenu/index.html",{"list":listofvars})
