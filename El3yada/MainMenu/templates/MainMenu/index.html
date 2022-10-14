@@ -9,7 +9,25 @@
       {%endfor%}
       {%endif%}
       </div>
+      
       <div class="container-fluid table-responsive mt-3">
+            <form class="mb-4" method="post">
+                  {%csrf_token%}
+                  <div class="row">
+                    <div class="col">
+                      <input type="text" class="form-control" placeholder="Search" name="search">
+                    </div>
+                    <div class="col">
+                        <select class="form-select" name="choice">
+                              <option>Name</option>
+                              <option>Mobile Phone Number</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <input type="submit" class="form-control btn btn-primary" placeholder="Search" value="Search">
+                    </div>
+                  </div>
+            </form>
             <table class="table table-sm table-bordered">
                   <tr>
                     <th>Aser</th>

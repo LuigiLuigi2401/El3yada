@@ -20,11 +20,26 @@ def AddUsers(request):
 
 @login_required
 def index(request):
-    listofvars=[]
-    for count,object in enumerate(appointments.objects.all()):
-        listofvars.append([])
-        for var in vars(object):
-            listofvars[count].append(getattr(object,var))
-        listofvars[count] = listofvars[count][2:]    
-    print(listofvars)
+    if request.method == 'POST':
+        name = request.POST.get("search")
+        choice = request.POST.get("choice")
+        if choice not in ['Name','Mobile Phone Number']:
+            listofvars=[]
+            return render(request,"MainMenu/index.html",{"lists":listofvars})
+        print(name)
+        listofvars=[]
+        if choice == 'Name':
+            for count,object in enumerate(appointments.objects.filter(Aname__contains=name)):
+                listofvars.append([])
+                for var in vars(object):
+                    listofvars[count].append(getattr(object,var))
+                listofvars[count] = listofvars[count][2:]  
+        else:
+            for count,object in enumerate(appointments.objects.filter(Atel__contains=name)):
+                listofvars.append([])
+                for var in vars(object):
+                    listofvars[count].append(getattr(object,var))
+                listofvars[count] = listofvars[count][2:]
+    else:  
+        listofvars = []
     return render(request,"MainMenu/index.html",{"lists":listofvars})
