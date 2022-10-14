@@ -23,7 +23,7 @@ def index(request):
     if request.method == 'POST':
         name = request.POST.get("search")
         choice = request.POST.get("choice")
-        if choice not in ['Name','Mobile Phone Number']:
+        if choice not in ['Name','Mobile Phone Number','Doctor Name']:
             listofvars=[]
             return render(request,"MainMenu/index.html",{"lists":listofvars})
         print(name)
@@ -34,7 +34,13 @@ def index(request):
                 for var in vars(object):
                     listofvars[count].append(getattr(object,var))
                 listofvars[count] = listofvars[count][2:]  
-        else:
+        elif choice == 'Doctor Name':
+            for count,object in enumerate(appointments.objects.filter(DocName__contains=name)):
+                listofvars.append([])
+                for var in vars(object):
+                    listofvars[count].append(getattr(object,var))
+                listofvars[count] = listofvars[count][2:]
+        elif choice == 'Mobile Phone Number':
             for count,object in enumerate(appointments.objects.filter(Atel__contains=name)):
                 listofvars.append([])
                 for var in vars(object):
