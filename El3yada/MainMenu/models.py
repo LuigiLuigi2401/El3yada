@@ -1,3 +1,4 @@
+from pyexpat import model
 from django.db import models
 class appointments(models.Model):
     Aser = models.IntegerField(unique=True,null=True)
@@ -23,4 +24,25 @@ class appointments(models.Model):
     MoneyNo = models.IntegerField(null=True)
     def __str__(self):
         return "{0}, {1}, {2}, {3}".format(self.Aser,self.Pser,self.Aname,self.Adate)
+
+class patient(models.Model):
+    Ser = models.IntegerField(unique=True,null=True)
+    PName = models.TextField(null=True)
+    BirthDate = models.DateField(null=True)
+    Sex = models.TextField(null=True)
+    Job = models.TextField(null=True)
+    Mstatus = models.TextField(null=True)
+    Street = models.TextField(null=True)
+    Phone = models.TextField(null=True)
+    Mobile = models.TextField(null=True)
+    Admission = models.DateField(null=True)
+    ContC = models.IntegerField(null=True)
+    ContN = models.TextField(null=True)
+    Ref = models.TextField(null=True)
+    Co = models.TextField(null=True)
+    Pro = models.TextField(null=True)
+    DELT = models.BooleanField(null=True)
+    PatNote = models.TextField(null=True)
+    def __str__(self):
+        return "{0},{1},{2},{3}".format(self.Ser,self.PName,self.Mobile,self.Street)
 

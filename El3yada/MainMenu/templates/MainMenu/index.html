@@ -1,7 +1,7 @@
 {%extends 'layout.html' %}
 {%load crispy_forms_tags%}
 {%block content%}
-      <h1 class="text-center">Welcome, {{user.username}}</h1>
+      <h1 class="text-center">Welcome, {{user.first_name}} {{user.last_name}}</h1>
       <div class="container">
       {%if messages%}
       {%for message in messages%}
@@ -29,7 +29,14 @@
                     </div>
                   </div>
             </form>
-            <table class="table table-sm table-bordered">
+            <table class="table table-sm table-bordered caption-top">
+                  {%if choice == 'Name'%}
+                  <caption>List of Appointments where the patient's name contains {{name}}</caption>
+                  {%elif choice == 'Doctor Name'%}
+                  <caption>List of Appointments where the Doctor's name contains {{name}}</caption>
+                  {%elif choice == 'Mobile Phone Number'%}
+                  <caption>List of Appointments where the patient's phone Number is {{name}}</caption>
+                  {%endif%}
                   <tr>
                     <th>Aser</th>
                     <th>Pser</th>
