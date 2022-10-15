@@ -4,9 +4,11 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from MainMenu.models import appointments,patient
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
+
 
 # Create your views here.
-@login_required
+@user_passes_test(lambda user: user.is_superuser)
 def AddUsers(request):
     if request.method == "POST":
         form = UserCreationForm(request.POST)
