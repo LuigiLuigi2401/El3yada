@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
-from MainMenu.models import appointments
+from MainMenu.models import appointments,patient
 from django.contrib.auth.decorators import login_required
 
 # Create your views here.
@@ -19,33 +19,55 @@ def AddUsers(request):
     return render(request,"MainMenu/AddUsers.html",{"form":form})
 
 @login_required
+def Patient(request):
+    return render(request,"MainMenu/PatientInfo.html")
+
+@login_required
 def index(request):
+    listofcolumns = list(vars(appointments).keys())[6:-2]
     if request.method == 'POST':
         name = request.POST.get("search")
         choice = request.POST.get("choice")
-        if choice not in ['Name','Mobile Phone Number','Doctor Name'] or name == '':
+        dbchoice = request.POST.get("dbchoice")
+        if choice not in ['Name','Mobile Phone Number','Doctor Name'] or name == '' or dbchoice not in ['Patients',"Appointments"]:
             listofvars=[]
             return render(request,"MainMenu/index.html",{"lists":listofvars})
         listofvars=[]
+        if dbchoice == 'Patients' and not choice == 'Doctor Name':
+            listofcolumns = list(vars(patient).keys())[6:-2]
         if choice == 'Name':
-            for count,object in enumerate(appointments.objects.filter(Aname__contains=name)):
-                listofvars.append([])
-                for var in vars(object):
-                    listofvars[count].append(getattr(object,var))
-                listofvars[count] = listofvars[count][2:]  
-        elif choice == 'Doctor Name':
+            if dbchoice == 'Appointments':
+                for count,object in enumerate(appointments.objects.filter(Aname__contains=name)):
+                    listofvars.append([])
+                    for var in vars(object):
+                        listofvars[count].append(getattr(object,var))
+                    listofvars[count] = listofvars[count][2:]  
+            else:
+                for count,object in enumerate(patient.objects.filter(PName__contains=name)):
+                    listofvars.append([])
+                    for var in vars(object):
+                        listofvars[count].append(getattr(object,var))
+                    listofvars[count] = listofvars[count][2:]  
+        elif choice == 'Doctor Name' and dbchoice == 'Appointments':
             for count,object in enumerate(appointments.objects.filter(DocName__contains=name)):
                 listofvars.append([])
                 for var in vars(object):
                     listofvars[count].append(getattr(object,var))
                 listofvars[count] = listofvars[count][2:]
         elif choice == 'Mobile Phone Number':
-            for count,object in enumerate(appointments.objects.filter(Atel=name)):
-                listofvars.append([])
-                for var in vars(object):
-                    listofvars[count].append(getattr(object,var))
-                listofvars[count] = listofvars[count][2:]
-        return render(request,"MainMenu/index.html",{"lists":listofvars,"choice":choice,"name":name})
+            if dbchoice == 'Appointments':
+                for count,object in enumerate(appointments.objects.filter(Atel=name)):
+                    listofvars.append([])
+                    for var in vars(object):
+                        listofvars[count].append(getattr(object,var))
+                    listofvars[count] = listofvars[count][2:]
+            else:
+                for count,object in enumerate(patient.objects.filter(Mobile=name)):
+                    listofvars.append([])
+                    for var in vars(object):
+                        listofvars[count].append(getattr(object,var))
+                    listofvars[count] = listofvars[count][2:]
+        return render(request,"MainMenu/index.html",{"lists":listofvars,"choice":choice,"name":name,"columns":listofcolumns,"dbchoice":dbchoice})
     else:  
         listofvars = []
-    return render(request,"MainMenu/index.html",{"lists":listofvars})
+    return render(request,"MainMenu/index.html",{"lists":listofvars,"columns":listofcolumns})

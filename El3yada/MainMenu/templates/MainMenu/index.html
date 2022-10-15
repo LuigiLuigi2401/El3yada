@@ -10,10 +10,10 @@
       {%endif%}
       </div>
       
-      <div class="container-fluid table-responsive mt-3">
+      <div class="container-fluid table-responsive mt-3 mb-10">
             <form class="mb-4" method="post">
                   {%csrf_token%}
-                  <div class="row">
+                  <div class="row mb-4">
                     <div class="col">
                       <input type="text" class="form-control" placeholder="Search" name="search">
                     </div>
@@ -28,37 +28,37 @@
                         <input type="submit" class="form-control btn btn-primary" placeholder="Search" value="Search">
                     </div>
                   </div>
+                  <div class="row">
+                        <div class="col">
+                            <select class="form-select" name="dbchoice">
+                                  <option>Patients</option>
+                                  <option>Appointments</option>
+                            </select>
+                        </div>
+                  </div>
             </form>
             <table class="table table-sm table-bordered caption-top">
                   {%if choice == 'Name'%}
-                  <caption>List of Appointments where the patient's name contains {{name}}</caption>
+                        {%if dbchoice == 'Appointments'%}
+                        <caption>List of Appointments where the patient's name contains {{name}}</caption>
+                        {%else%}
+                        <caption>List of Patients where their name contains {{name}}</caption>
+                        {%endif%}
                   {%elif choice == 'Doctor Name'%}
-                  <caption>List of Appointments where the Doctor's name contains {{name}}</caption>
+                        {%if dbchoice == 'Appointments'%}
+                        <caption>List of Appointments where the Doctor's name contains {{name}}</caption>
+                        {%endif%}
                   {%elif choice == 'Mobile Phone Number'%}
-                  <caption>List of Appointments where the patient's phone Number is {{name}}</caption>
+                        {%if dbchoice == 'Appointments'%}
+                        <caption>List of Appointments where the patient's Phone Number is {{name}}</caption>
+                        {%else%}
+                        <caption>List of Patients where their phone number is {{name}}</caption>
+                        {%endif%}
                   {%endif%}
                   <tr>
-                    <th>Aser</th>
-                    <th>Pser</th>
-                    <th>Aname</th>
-                    <th>Aphone</th>
-                    <th>Atel</th>
-                    <th>Adate</th>
-                    <th>ServNo</th>
-                    <th>Arem</th>
-                    <th>Arraive</th>
-                    <th>DocNo</th>
-                    <th>DocName</th>
-                    <th>Fees</th>
-                    <th>Cost</th>
-                    <th>Seen</th>
-                    <th>DoneBy</th>
-                    <th>Per</th>
-                    <th>AMPMCode</th>
-                    <th>AMPM</th>
-                    <th>ContrC</th>
-                    <th>MoneyBy</th>
-                    <th>MoneyNo</th>
+                        {%for x in columns%}
+                        <th>{{x}}</th>
+                        {%endfor%}
                   </tr>
             {%if lists%}
                   {%for list in lists%}
