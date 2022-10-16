@@ -29,7 +29,7 @@
                   <a class="nav-link active" aria-current="page" href="/">Home</a>
                 </li>
                 {%endif%}
-                {%if user.username == "MahmoudAboulfadl"%}
+                {%if user.is_superuser%}
                 <li class="nav-item">
                   <a class="nav-link active" aria-current="page" href="/adduser">Add Users</a>
                 </li>
