@@ -9,7 +9,7 @@ from django.contrib.auth.models import User, Group
 from rest_framework import viewsets
 from rest_framework import permissions
 from .serializers import UserSerializer, GroupSerializer , PatientSerializer,AppointmentSerializer
-from .forms import PatientForm
+from .forms import PatientForm, UpdatePatientForm , UpdateExtraInfo
 import datetime
 
 
@@ -56,7 +56,31 @@ def PatientView(request,Ser):
                     AppointmentList[count] = AppointmentList[count][2:]
     listpatientinfo = ['Patient Info','Patient Name','Date of Birth','Sex','Job','Marital Status','Street','Phone Number','Mobile Phone Number','Added on']
     Plist = zip(listpatientinfo, PatientList)
-    return render(request,"MainMenu/PatientView.html",{'Plist':Plist,'lists':AppointmentList,'columns':listofcolumns})
+    if request.method == 'POST':
+        patientobj = patient.objects.get(Ser=Ser)
+        appointmentobj = appointments.objects.filter(Pser=Ser)
+        print(patientobj)
+        print(request.POST)
+        extraformcontext = {
+            'csrfmiddlewaretoken':request.POST['csrfmiddlewaretoken'],
+            'Aname':request.POST['PName'],
+            'Atel:':request.POST['Phone'],
+            'Aphone':request.POST['Mobile']
+        }
+        updateform=UpdatePatientForm(request.POST,instance=patientobj)
+        extraform = UpdatePatientForm(extraformcontext)
+        if updateform.is_valid():
+            updateform.save()
+            
+            print('Success')
+    else:
+        initialcontext = {}
+        for x,y in zip(list(vars(patient).keys())[6:], PatientList):
+            initialcontext[x] = y
+        print(initialcontext)
+        updateform = UpdatePatientForm(initial=initialcontext)
+        extraform = UpdateExtraInfo()
+    return render(request,"MainMenu/PatientView.html",{'Plist':Plist,'lists':AppointmentList,'columns':listofcolumns,'uform':updateform,'hform':extraform})
 
 
 @login_required

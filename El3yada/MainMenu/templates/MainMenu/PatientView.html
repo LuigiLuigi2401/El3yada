@@ -29,5 +29,12 @@
                   {%endfor%}
             {%endif%}
             </table>
+            <form method="post">
+                {%csrf_token%}
+                {{uform|crispy}}
+                {{hform.as_hidden}}
+                <input type="submit">
+            </form>
       </div>
+      
 {%endblock%}
