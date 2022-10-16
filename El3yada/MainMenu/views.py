@@ -5,6 +5,12 @@ from django.contrib import messages
 from MainMenu.models import appointments,patient
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.models import User, Group
+from rest_framework import viewsets
+from rest_framework import permissions
+from .serializers import UserSerializer, GroupSerializer , PatientSerializer,AppointmentSerializer
+from .forms import PatientForm
+import datetime
 
 
 # Create your views here.
@@ -22,7 +28,17 @@ def AddUsers(request):
 
 @login_required
 def Patient(request):
-    return render(request,"MainMenu/PatientInfo.html")
+    if request.method == "POST":
+        form = PatientForm(request.POST)
+        if form.is_valid():
+            form.save()
+            name = form.cleaned_data.get("PName")
+            messages.success(request,f'Data Created for Patient {name}')
+            return redirect('index')
+    lastnum = int(patient.objects.last().Ser) + 1
+    date = datetime.date.today()
+    form = PatientForm(initial = {'Ser':lastnum,'Admission':date})
+    return render(request,"MainMenu/PatientInfo.html",{'form':form})
 
 @login_required
 def index(request):
@@ -73,3 +89,36 @@ def index(request):
     else:  
         listofvars = []
     return render(request,"MainMenu/index.html",{"lists":listofvars,"columns":listofcolumns})
+
+class UserViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows users to be viewed or edited.
+    """
+    queryset = User.objects.all().order_by('-date_joined')
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class PatientViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows patients to be viewed or edited.
+    """
+    queryset = patient.objects.all().order_by('Ser')
+    serializer_class = PatientSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class AppointmentViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows Appointments to be viewed or edited.
+    """
+    queryset = appointments.objects.all().order_by('Aser')
+    serializer_class = AppointmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class GroupViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows groups to be viewed or edited.
+    """
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+    permission_classes = [permissions.IsAuthenticated]

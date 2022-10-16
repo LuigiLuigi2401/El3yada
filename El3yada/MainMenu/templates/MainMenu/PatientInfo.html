@@ -1,0 +1,18 @@
+{%extends 'layout.html' %}
+{%load crispy_forms_tags%}
+{%block content%}
+      <h1 class="text-center">Welcome, {{user.first_name}} {{user.last_name}}</h1>
+      <!-- Registration -->
+      <div class="container content-section mb-5">
+            <form method="post">
+                  {%csrf_token%}
+                  <fieldset class="form-group mb-5">
+                        <legend class="border-bottom mb-4">Add Patients</legend>
+                        {{form|crispy}}
+                  </fieldset>
+                  <div class="text-center mb-5">
+                        <input type="submit" class="btn btn-primary mb-5" value="Add Patient">
+                  </div>
+            </form>
+      </div>
+{%endblock%}
