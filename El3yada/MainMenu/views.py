@@ -27,7 +27,7 @@ def AddUsers(request):
     return render(request,"MainMenu/AddUsers.html",{"form":form})
 
 @login_required
-def Patient(request):
+def PatientAdd(request):
     if request.method == "POST":
         form = PatientForm(request.POST)
         if form.is_valid():
@@ -38,7 +38,26 @@ def Patient(request):
     lastnum = int(patient.objects.last().Ser) + 1
     date = datetime.date.today()
     form = PatientForm(initial = {'Ser':lastnum,'Admission':date})
-    return render(request,"MainMenu/PatientInfo.html",{'form':form})
+    return render(request,"MainMenu/PatientAdd.html",{'form':form})
+
+@login_required
+def PatientView(request,Ser):
+    PatientList = []
+    for object in patient.objects.filter(Ser=Ser):
+                    for var in vars(object):
+                        PatientList.append(getattr(object,var))
+                    PatientList = PatientList[2:12]
+    listofcolumns = list(vars(appointments).keys())[6:-2]
+    AppointmentList = []
+    for count,object in enumerate(appointments.objects.filter(Pser=Ser)):
+                    AppointmentList.append([])
+                    for var in vars(object):
+                        AppointmentList[count].append(getattr(object,var))
+                    AppointmentList[count] = AppointmentList[count][2:]
+    listpatientinfo = ['Patient Info','Patient Name','Date of Birth','Sex','Job','Marital Status','Street','Phone Number','Mobile Phone Number','Added on']
+    Plist = zip(listpatientinfo, PatientList)
+    return render(request,"MainMenu/PatientView.html",{'Plist':Plist,'lists':AppointmentList,'columns':listofcolumns})
+
 
 @login_required
 def index(request):
@@ -49,7 +68,7 @@ def index(request):
         dbchoice = request.POST.get("dbchoice")
         if choice not in ['Name','Mobile Phone Number','Doctor Name'] or name == '' or dbchoice not in ['Patients',"Appointments"]:
             listofvars=[]
-            return render(request,"MainMenu/index.html",{"lists":listofvars})
+            return render(request,"MainMenu/index.html",{"lists":listofvars,'columns':listofcolumns})
         listofvars=[]
         if dbchoice == 'Patients' and not choice == 'Doctor Name':
             listofcolumns = list(vars(patient).keys())[6:-2]
@@ -110,9 +129,19 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows Appointments to be viewed or edited.
     """
-    queryset = appointments.objects.all().order_by('Aser')
-    serializer_class = AppointmentSerializer
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AppointmentSerializer
+    def get_queryset(self, name=None,doctor=None):
+        name = self.request.query_params.get('name')
+        doctor = self.request.query_params.get('doctor')
+        if name is not None and doctor is None:
+            queryset = appointments.objects.raw(f'select * from MainMenu_appointments where Aname like \'%{name}%\' order by Aser')
+        elif doctor is not None and name is None:
+            queryset = appointments.objects.raw(f'select * from MainMenu_appointments where DocName like \'%{doctor}%\' order by Aser')
+        else:
+            queryset = appointments.objects.all().order_by('Aser')
+        return queryset
+    
 
 
 class GroupViewSet(viewsets.ModelViewSet):

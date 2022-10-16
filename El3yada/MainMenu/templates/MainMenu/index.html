@@ -70,8 +70,18 @@
                         {%for item in list%}
                               {%if item is None%}
                               <td></td>
+                              {%elif item == list.1%}
+                                    {%if dbchoice == 'Patients'%}
+                                          <td><a href="/patient/{{list.0}}">{{item}}</a></td>
+                                    {%else%}
+                                          <td>{{item}}</td>
+                                    {%endif%}
                               {%else%}
-                              <td>{{item}}</td>
+                                    {%if dbchoice == 'Appointments' and item == list.2%}
+                                          <td><a href="/patient/{{list.1}}">{{item}}</a></td>
+                                    {%else%}
+                                          <td>{{item}}</td>
+                                    {%endif%}
                               {%endif%}
                         {%endfor%}
                         </tr>
