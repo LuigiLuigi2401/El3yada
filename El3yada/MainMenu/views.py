@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
@@ -33,7 +33,7 @@ def PatientAdd(request):
         if form.is_valid():
             form.save()
             name = form.cleaned_data.get("PName")
-            messages.success(request,f'Data Created for Patient {name}')
+            messages.success(request,f'Data Created for {name}')
             return redirect('index')
     lastnum = int(patient.objects.last().Ser) + 1
     date = datetime.date.today()
@@ -59,6 +59,8 @@ def PatientView(request,Ser):
                 extraform = UpdateExtraInfo(extraformcontext,instance=item)
                 if extraform.is_valid():
                     extraform.save()
+            name = updateform.cleaned_data.get("PName")
+            messages.success(request,f'Updated Data For {name}!')
             print('Success')
     PatientList = []
     for object in patient.objects.filter(Ser=Ser):
@@ -149,6 +151,13 @@ class PatientViewSet(viewsets.ModelViewSet):
     queryset = patient.objects.all().order_by('Ser')
     serializer_class = PatientSerializer
     permission_classes = [permissions.IsAuthenticated]
+    def get_queryset(self, name=None,doctor=None):
+        name = self.request.query_params.get('name')
+        if name is not None:
+            queryset = appointments.objects.raw(f'select * from MainMenu_patient where PName like \'%{name}%\' order by Ser')
+        else:
+            queryset = appointments.objects.all().order_by('Aser')
+        return queryset
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     """

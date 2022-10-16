@@ -2,9 +2,9 @@
 {%load crispy_forms_tags%}
 {%block content%}
       {%if user.first_name%}
-      <h1 class="text-center">Welcome, {{user.first_name}} {{user.last_name}}</h1>
+      <h1 class="text-center my-5">Welcome, {{user.first_name}} {{user.last_name}}</h1>
       {%else%}
-      <h1 class="text-center">Welcome, {{user.username}}</h1>
+      <h1 class="text-center my-5">Welcome, {{user.username}}</h1>
       {%endif%}
       <div class="container">
       {%if messages%}
@@ -13,8 +13,7 @@
       {%endfor%}
       {%endif%}
       </div>
-      
-      <div class="container-fluid table-responsive mt-3 mb-5">
+      <div class="container-fluid">
             <form class="mb-4" method="post">
                   {%csrf_token%}
                   <div class="row mb-4">
@@ -41,6 +40,8 @@
                         </div>
                   </div>
             </form>
+      </div>
+      <div class="container-fluid table-responsive mt-3 mb-5">
             <table class="table table-sm table-bordered caption-top mb-5">
                   {%if choice == 'Name'%}
                         {%if dbchoice == 'Appointments'%}
