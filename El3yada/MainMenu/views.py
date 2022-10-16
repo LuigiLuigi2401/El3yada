@@ -42,6 +42,24 @@ def PatientAdd(request):
 
 @login_required
 def PatientView(request,Ser):
+    if request.method == 'POST':
+        patientobj = patient.objects.get(Ser=Ser)
+        appointmentobj = appointments.objects.filter(Pser=Ser)
+        print(request.POST['Phone'])
+        extraformcontext = {
+            'csrfmiddlewaretoken':request.POST['csrfmiddlewaretoken'],
+            'Aname':request.POST['PName'],
+            'Aphone':request.POST['Phone'],
+            'Atel':request.POST['Mobile']
+        }
+        updateform=UpdatePatientForm(request.POST,instance=patientobj)
+        if updateform.is_valid():
+            updateform.save()
+            for item in appointmentobj:
+                extraform = UpdateExtraInfo(extraformcontext,instance=item)
+                if extraform.is_valid():
+                    extraform.save()
+            print('Success')
     PatientList = []
     for object in patient.objects.filter(Ser=Ser):
                     for var in vars(object):
@@ -56,24 +74,7 @@ def PatientView(request,Ser):
                     AppointmentList[count] = AppointmentList[count][2:]
     listpatientinfo = ['Patient Info','Patient Name','Date of Birth','Sex','Job','Marital Status','Street','Phone Number','Mobile Phone Number','Added on']
     Plist = zip(listpatientinfo, PatientList)
-    if request.method == 'POST':
-        patientobj = patient.objects.get(Ser=Ser)
-        appointmentobj = appointments.objects.filter(Pser=Ser)
-        print(patientobj)
-        print(request.POST)
-        extraformcontext = {
-            'csrfmiddlewaretoken':request.POST['csrfmiddlewaretoken'],
-            'Aname':request.POST['PName'],
-            'Atel:':request.POST['Phone'],
-            'Aphone':request.POST['Mobile']
-        }
-        updateform=UpdatePatientForm(request.POST,instance=patientobj)
-        extraform = UpdatePatientForm(extraformcontext)
-        if updateform.is_valid():
-            updateform.save()
-            
-            print('Success')
-    else:
+    if request.method == 'GET':
         initialcontext = {}
         for x,y in zip(list(vars(patient).keys())[6:], PatientList):
             initialcontext[x] = y

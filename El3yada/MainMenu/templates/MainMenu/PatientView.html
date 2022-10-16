@@ -29,11 +29,13 @@
                   {%endfor%}
             {%endif%}
             </table>
-            <form method="post">
+            <form method="post" action="">
                 {%csrf_token%}
                 {{uform|crispy}}
                 {{hform.as_hidden}}
-                <input type="submit">
+                <div class="text-center">
+                <input type="submit" class="btn btn-primary my-5">
+                </div>
             </form>
       </div>
       
