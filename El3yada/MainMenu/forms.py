@@ -32,18 +32,15 @@ class AppointmentForm(ModelForm):
     # specify the name of model to use
     class Meta:
         model = appointments
-        exclude = ['id','AMPM','AMPMCode','Seen','ServNo','Aname','Aphone','Atel','DocNo','MoneyNo']
+        exclude = ['id','AMPM','AMPMCode','Seen','ServNo','DocNo','MoneyNo','ContrC']
         widgets = {
             'Aser': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Pser': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Adate': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Arem': Textarea(attrs={'cols': 80, 'rows': 1}),
-            'Arraive': Textarea(attrs={'cols': 80, 'rows': 1}),
-            'DocName': Textarea(attrs={'cols': 80, 'rows': 1}),
+            # 'DocName': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Fees': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Cost': Textarea(attrs={'cols': 80, 'rows': 1}),
-            'DoneBy': Textarea(attrs={'cols': 80, 'rows': 1}),
-            'MoneyBy': Textarea(attrs={'cols': 80, 'rows': 1})
 
         }
         labels={
@@ -53,6 +50,11 @@ class AppointmentForm(ModelForm):
             'Arem':_('Service'),
             'DocName':_("Doctor's Name")
         }
+
+class FrontEndAppointment(AppointmentForm):
+    class Meta(AppointmentForm.Meta):
+        model = appointments
+        exclude = ['id','AMPM','AMPMCode','Seen','ServNo','Aname','Aphone','Atel','DocNo','MoneyNo','ContrC','Per']
 
 class UpdatePatientForm(ModelForm):
     # specify the name of model to use

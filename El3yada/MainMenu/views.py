@@ -1,3 +1,4 @@
+import re
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.contrib.auth.forms import UserCreationForm
@@ -9,7 +10,7 @@ from django.contrib.auth.models import User, Group
 from rest_framework import viewsets
 from rest_framework import permissions
 from .serializers import UserSerializer, GroupSerializer , PatientSerializer,AppointmentSerializer
-from .forms import PatientForm, UpdatePatientForm , UpdateExtraInfo, AppointmentForm
+from .forms import PatientForm, UpdatePatientForm , UpdateExtraInfo, AppointmentForm , FrontEndAppointment
 import datetime
 
 
@@ -45,7 +46,6 @@ def PatientView(request,Ser):
     if request.method == 'POST':
         patientobj = patient.objects.get(Ser=Ser)
         appointmentobj = appointments.objects.filter(Pser=Ser)
-        print(request.POST['Phone'])
         extraformcontext = {
             'csrfmiddlewaretoken':request.POST['csrfmiddlewaretoken'],
             'Aname':request.POST['PName'],
@@ -67,7 +67,10 @@ def PatientView(request,Ser):
                     for var in vars(object):
                         PatientList.append(getattr(object,var))
                     PatientList = PatientList[2:12]
-    listofcolumns = list(vars(appointments).keys())[6:-2]
+    listofcolumns = list(vars(appointments).keys())[10:-2]
+    listofcolumns.remove('get_DoneBy_display')
+    listofcolumns.remove('get_MoneyBy_display')
+    listofcolumns.remove('get_DocName_display')
     AppointmentList = []
     for count,object in enumerate(appointments.objects.filter(Pser=Ser)):
                     AppointmentList.append([])
@@ -76,19 +79,55 @@ def PatientView(request,Ser):
                     AppointmentList[count] = AppointmentList[count][2:]
     listpatientinfo = ['Patient Info','Patient Name','Date of Birth','Sex','Job','Marital Status','Street','Phone Number','Mobile Phone Number','Added on']
     Plist = zip(listpatientinfo, PatientList)
-    if request.method == 'GET':
-        initialcontext = {}
-        for x,y in zip(list(vars(patient).keys())[6:], PatientList):
-            initialcontext[x] = y
-        print(initialcontext)
-        updateform = UpdatePatientForm(initial=initialcontext)
-        extraform = UpdateExtraInfo()
+    initialcontext = {}
+    for x,y in zip(list(vars(patient).keys())[6:], PatientList):
+        initialcontext[x] = y
+    updateform = UpdatePatientForm(initial=initialcontext)
+    extraform = UpdateExtraInfo()
     return render(request,"MainMenu/PatientView.html",{'Plist':Plist,'lists':AppointmentList,'columns':listofcolumns,'uform':updateform,'hform':extraform})
+
+@login_required
+def AppointmentView(request,Aser):
+    obj = appointments.objects.get(Aser=Aser)
+    if request.method == 'POST':
+        tempdict = request.POST.copy()
+        name = patient.objects.get(Ser=request.POST["Pser"]).PName
+        phone = patient.objects.get(Ser=request.POST["Pser"]).Phone
+        tel = patient.objects.get(Ser=request.POST["Pser"]).Mobile
+        tempdict['Aname'] = name
+        tempdict['Aphone'] = phone
+        tempdict['Atel'] = tel
+        tempdict['Per'] = appointments.objects.filter(Adate=request.POST['Adate']).exclude(Aser=obj.Aser).count() + 1
+        request.POST = tempdict
+        updateform=AppointmentForm(request.POST,instance=obj)
+        if updateform.is_valid():
+            updateform.save()
+            name = updateform.cleaned_data.get("Aser")
+            messages.success(request,f'Updated Data For Appointment no. {name}!')
+            print('Success')
+    listofcolumns = list(vars(appointments).keys())[10:-2]
+    listofcolumns.remove('get_DoneBy_display')
+    listofcolumns.remove('get_MoneyBy_display')
+    listofcolumns.remove('get_DocName_display')
+    AppointmentList = []
+    for var in listofcolumns:
+        AppointmentList.append(getattr(appointments.objects.get(Aser=Aser),var))
+    # listpatientinfo = ['Patient Info','Patient Name','Date of Birth','Sex','Job','Marital Status','Street','Phone Number','Mobile Phone Number','Added on']
+    # Plist = zip(listpatientinfo, PatientList)
+    initialcontext = {}
+    for x,y in zip(listofcolumns, AppointmentList):
+        initialcontext[x] = y
+    updateform = FrontEndAppointment(initial=initialcontext)
+    return render(request,"MainMenu/AppointmentView.html",{'list':AppointmentList,'columns':listofcolumns,'uform':updateform})
+
 
 
 @login_required
 def index(request):
-    listofcolumns = list(vars(appointments).keys())[6:-2]
+    listofcolumns = list(vars(appointments).keys())[10:-2]
+    listofcolumns.remove('get_DoneBy_display')
+    listofcolumns.remove('get_MoneyBy_display')
+    listofcolumns.remove('get_DocName_display')
     if request.method == 'POST':
         name = request.POST.get("search")
         choice = request.POST.get("choice")
@@ -136,15 +175,35 @@ def index(request):
         listofvars = []
     return render(request,"MainMenu/index.html",{"lists":listofvars,"columns":listofcolumns})
 
+
 @login_required
 def appointmentadd(request):
+    if request.method == "POST":
+        print(request.POST)
+        tempdict = request.POST.copy()
+        name = patient.objects.get(Ser=request.POST["Pser"]).PName
+        phone = patient.objects.get(Ser=request.POST["Pser"]).Phone
+        tel = patient.objects.get(Ser=request.POST["Pser"]).Mobile
+        tempdict['Aname'] = name
+        tempdict['Aphone'] = phone
+        tempdict['Atel'] = tel
+        tempdict['Per'] = appointments.objects.filter(Adate=request.POST['Adate']).count() + 1
+        request.POST = tempdict
+        print(request.POST)
+        form = AppointmentForm(request.POST)
+        if form.is_valid():
+            print('Success')
+            form.save()
+            name = form.cleaned_data.get("PName")
+            messages.success(request,f'Appointment Data Created for {name}')
+            return redirect('index')
     lastnum = int(appointments.objects.last().Aser) + 1
     date = datetime.date.today()
     if request.user.get_full_name():
         doneby = request.user.get_full_name()
     else:
         doneby = request.user.username
-    form = AppointmentForm(initial={'Aser':lastnum,'Adate':date,'DoneBy':doneby})
+    form = FrontEndAppointment(initial={'Aser':lastnum,'Adate':date,'DoneBy':doneby})
     context={
         'form':form
     }

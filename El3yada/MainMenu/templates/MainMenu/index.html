@@ -80,6 +80,8 @@
                               {%else%}
                                     {%if dbchoice == 'Appointments' and item == list.2%}
                                           <td><a href="/patient/{{list.1}}">{{item}}</a></td>
+                                    {%elif dbchoice == 'Appointments' and item == list.0%}
+                                          <td><a href="/appointment/{{list.0}}">{{item}}</a></td>
                                     {%else%}
                                           <td>{{item}}</td>
                                     {%endif%}

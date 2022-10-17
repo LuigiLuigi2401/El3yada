@@ -15,5 +15,6 @@ urlpatterns=[
     path("addappointment/",views.appointmentadd,name="addappointments"),
     path("patient/create/",views.PatientAdd,name="patientadd"),
     path("patient/<int:Ser>",views.PatientView,name="patientview"),
+    path('appointment/<int:Aser>',views.AppointmentView,name='updateappointment'),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]

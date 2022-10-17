@@ -1,0 +1,40 @@
+{%extends 'layout.html' %}
+{%load crispy_forms_tags%}
+{%block content%}
+      <h1 class="text-center">Welcome, {{user.first_name}} {{user.last_name}}</h1>
+      <div class="container">
+      {%if messages%}
+      {%for message in messages%}
+            <div class="alert alert-{{message.tags}} text-center">{{message}}</div>
+      {%endfor%}
+      {%endif%}
+      </div>
+      <div class="container content-section mb-5">
+            <div class="container-fluid table-responsive mt-3 mb-5">
+                <table class="table table-bordered caption-top mb-5">
+                    <tr>
+                        {%for x in columns%}
+                        <th>{{x}}</th>
+                        {%endfor%}
+                    </tr>
+                    <tr>
+                    {%for item in list%}
+                        {%if item is None%}
+                            <td></td>
+                        {%else%}
+                                <td>{{item}}</td>
+                        {%endif%}
+                    {%endfor%}
+                    </tr>
+                </table>
+            </div>
+            <form method="post" action="">
+                {%csrf_token%}
+                {{uform|crispy}}
+                <div class="text-center">
+                <input type="submit" class="btn btn-primary my-5" name='update' value="Update">
+                </div>
+            </form>
+      </div>
+      
+{%endblock%}
