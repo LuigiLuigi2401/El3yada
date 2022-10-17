@@ -28,6 +28,32 @@ class PatientForm(ModelForm):
             'PatNote':_("Patient Notes")
         }
 
+class AppointmentForm(ModelForm):
+    # specify the name of model to use
+    class Meta:
+        model = appointments
+        exclude = ['id','AMPM','AMPMCode','Seen','ServNo','Aname','Aphone','Atel','DocNo','MoneyNo']
+        widgets = {
+            'Aser': Textarea(attrs={'cols': 80, 'rows': 1}),
+            'Pser': Textarea(attrs={'cols': 80, 'rows': 1}),
+            'Adate': Textarea(attrs={'cols': 80, 'rows': 1}),
+            'Arem': Textarea(attrs={'cols': 80, 'rows': 1}),
+            'Arraive': Textarea(attrs={'cols': 80, 'rows': 1}),
+            'DocName': Textarea(attrs={'cols': 80, 'rows': 1}),
+            'Fees': Textarea(attrs={'cols': 80, 'rows': 1}),
+            'Cost': Textarea(attrs={'cols': 80, 'rows': 1}),
+            'DoneBy': Textarea(attrs={'cols': 80, 'rows': 1}),
+            'MoneyBy': Textarea(attrs={'cols': 80, 'rows': 1})
+
+        }
+        labels={
+            'Aser': _('Appointment Number'),
+            'Pser': _('Patient Number'),
+            'Adate':_('Date'),
+            'Arem':_('Service'),
+            'DocName':_("Doctor's Name")
+        }
+
 class UpdatePatientForm(ModelForm):
     # specify the name of model to use
     class Meta:

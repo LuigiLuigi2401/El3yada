@@ -22,4 +22,4 @@ class PatientSerializer(serializers.HyperlinkedModelSerializer):
 class AppointmentSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = appointments
-        fields = ['Aser','Pser','Aname','Atel','Adate','DocName','Fees','Arem']
+        fields = ['Aser','Pser','Aname','Aphone','Atel','Adate','DocName','Fees','Arem']

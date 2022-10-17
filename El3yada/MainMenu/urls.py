@@ -12,6 +12,7 @@ urlpatterns=[
     path("api/",include(router.urls)),
     path("",views.index,name='index'),
     path("adduser/",views.AddUsers,name="addusers"),
+    path("addappointment/",views.appointmentadd,name="addappointments"),
     path("patient/create/",views.PatientAdd,name="patientadd"),
     path("patient/<int:Ser>",views.PatientView,name="patientview"),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))

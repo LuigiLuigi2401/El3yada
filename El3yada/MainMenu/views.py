@@ -9,7 +9,7 @@ from django.contrib.auth.models import User, Group
 from rest_framework import viewsets
 from rest_framework import permissions
 from .serializers import UserSerializer, GroupSerializer , PatientSerializer,AppointmentSerializer
-from .forms import PatientForm, UpdatePatientForm , UpdateExtraInfo
+from .forms import PatientForm, UpdatePatientForm , UpdateExtraInfo, AppointmentForm
 import datetime
 
 
@@ -136,6 +136,19 @@ def index(request):
         listofvars = []
     return render(request,"MainMenu/index.html",{"lists":listofvars,"columns":listofcolumns})
 
+@login_required
+def appointmentadd(request):
+    lastnum = int(appointments.objects.last().Aser) + 1
+    date = datetime.date.today()
+    if request.user.get_full_name():
+        doneby = request.user.get_full_name()
+    else:
+        doneby = request.user.username
+    form = AppointmentForm(initial={'Aser':lastnum,'Adate':date,'DoneBy':doneby})
+    context={
+        'form':form
+    }
+    return render(request,'MainMenu/AppointmentAdd.html',context)
 class UserViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
@@ -168,10 +181,13 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     def get_queryset(self, name=None,doctor=None):
         name = self.request.query_params.get('name')
         doctor = self.request.query_params.get('doctor')
-        if name is not None and doctor is None:
+        num = self.request.query_params.get('Aser')
+        if name is not None and doctor is None and num is None:
             queryset = appointments.objects.raw(f'select * from MainMenu_appointments where Aname like \'%{name}%\' order by Aser')
-        elif doctor is not None and name is None:
+        elif doctor is not None and name is None and num is None:
             queryset = appointments.objects.raw(f'select * from MainMenu_appointments where DocName like \'%{doctor}%\' order by Aser')
+        elif num is not None and name is None and doctor is None:
+            queryset = appointments.objects.raw(f'select * from MainMenu_appointments where Aser == {num}')
         else:
             queryset = appointments.objects.all().order_by('Aser')
         return queryset
