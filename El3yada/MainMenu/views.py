@@ -11,7 +11,7 @@ from rest_framework import viewsets
 from rest_framework import permissions
 from .serializers import UserSerializer, GroupSerializer , PatientSerializer,AppointmentSerializer
 from .forms import PatientForm, UpdatePatientForm , UpdateExtraInfo, AppointmentForm , FrontEndAppointment
-import datetime
+from datetime import date
 
 
 # Create your views here.
@@ -25,7 +25,9 @@ def AddUsers(request):
             messages.success(request,f'Account Created For {username}!')
             return redirect('login')
     form = UserCreationForm()
-    return render(request,"MainMenu/AddUsers.html",{"form":form})
+    format = "%Y-%m-%d"
+    today = date.today().strftime(format)
+    return render(request,"MainMenu/AddUsers.html",{"form":form,'today':today})
 
 @login_required
 def PatientAdd(request):
@@ -37,9 +39,37 @@ def PatientAdd(request):
             messages.success(request,f'Data Created for {name}')
             return redirect('index')
     lastnum = int(patient.objects.last().Ser) + 1
-    date = datetime.date.today()
-    form = PatientForm(initial = {'Ser':lastnum,'Admission':date})
-    return render(request,"MainMenu/PatientAdd.html",{'form':form})
+    todaydate = date.today()
+    form = PatientForm(initial = {'Ser':lastnum,'Admission':todaydate})
+    format = "%Y-%m-%d"
+    today = date.today().strftime(format)
+    return render(request,"MainMenu/PatientAdd.html",{'form':form,'today':today})
+
+@login_required
+def viewday(request,Adate):
+    if request.method == "POST":
+        Aser = request.POST['name']
+        print(Aser)
+        objtochange = appointments.objects.get(Aser=Aser)
+        if objtochange.Arraive:
+            objtochange.Arraive = False
+        else:
+            objtochange.Arraive = True
+        objtochange.save()
+    obj = appointments.objects.filter(Adate=Adate)
+    listofcolumns = list(vars(appointments).keys())[10:-2]
+    listofcolumns.remove('get_DoneBy_display')
+    listofcolumns.remove('get_MoneyBy_display')
+    listofcolumns.remove('get_DocName_display')
+    listofvars=[]
+    for count,object in enumerate(obj):
+        listofvars.append([])
+        for var in vars(object):
+            listofvars[count].append(getattr(object,var))
+        listofvars[count] = listofvars[count][2:]
+    format = "%Y-%m-%d"
+    today = date.today().strftime(format)
+    return render(request,"MainMenu/ViewDay.html",{"lists":listofvars,"columns":listofcolumns,'date':Adate,'today':today})
 
 @login_required
 def PatientView(request,Ser):
@@ -84,7 +114,9 @@ def PatientView(request,Ser):
         initialcontext[x] = y
     updateform = UpdatePatientForm(initial=initialcontext)
     extraform = UpdateExtraInfo()
-    return render(request,"MainMenu/PatientView.html",{'Plist':Plist,'lists':AppointmentList,'columns':listofcolumns,'uform':updateform,'hform':extraform})
+    format = "%Y-%m-%d"
+    today = date.today().strftime(format)
+    return render(request,"MainMenu/PatientView.html",{'Plist':Plist,'lists':AppointmentList,'columns':listofcolumns,'uform':updateform,'hform':extraform,'today':today})
 
 @login_required
 def AppointmentView(request,Aser):
@@ -118,7 +150,9 @@ def AppointmentView(request,Aser):
     for x,y in zip(listofcolumns, AppointmentList):
         initialcontext[x] = y
     updateform = FrontEndAppointment(initial=initialcontext)
-    return render(request,"MainMenu/AppointmentView.html",{'list':AppointmentList,'columns':listofcolumns,'uform':updateform})
+    format = "%Y-%m-%d"
+    today = date.today().strftime(format)
+    return render(request,"MainMenu/AppointmentView.html",{'list':AppointmentList,'columns':listofcolumns,'uform':updateform,'today':today})
 
 
 
@@ -173,7 +207,9 @@ def index(request):
         return render(request,"MainMenu/index.html",{"lists":listofvars,"choice":choice,"name":name,"columns":listofcolumns,"dbchoice":dbchoice})
     else:  
         listofvars = []
-    return render(request,"MainMenu/index.html",{"lists":listofvars,"columns":listofcolumns})
+    format = "%Y-%m-%d"
+    today = date.today().strftime(format)
+    return render(request,"MainMenu/index.html",{"lists":listofvars,"columns":listofcolumns,'today':today})
 
 
 @login_required
@@ -198,14 +234,17 @@ def appointmentadd(request):
             messages.success(request,f'Appointment Data Created for {name}')
             return redirect('index')
     lastnum = int(appointments.objects.last().Aser) + 1
-    date = datetime.date.today()
+    todaydate = date.today()
     if request.user.get_full_name():
         doneby = request.user.get_full_name()
     else:
         doneby = request.user.username
-    form = FrontEndAppointment(initial={'Aser':lastnum,'Adate':date,'DoneBy':doneby})
+    form = FrontEndAppointment(initial={'Aser':lastnum,'Adate':todaydate,'DoneBy':doneby})
+    format = "%Y-%m-%d"
+    today = date.today().strftime(format)
     context={
-        'form':form
+        'form':form,
+        'today':today
     }
     return render(request,'MainMenu/AppointmentAdd.html',context)
 class UserViewSet(viewsets.ModelViewSet):

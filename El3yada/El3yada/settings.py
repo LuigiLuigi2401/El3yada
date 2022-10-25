@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 import os
 from pathlib import Path
+import mimetypes
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,12 +32,16 @@ ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
+
+
 INSTALLED_APPS = [
     'login',
     'MainMenu',
     'crispy_forms',
     'import_export',
     'rest_framework',
+    'debug_toolbar',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -47,7 +52,12 @@ INSTALLED_APPS = [
 
 IMPORT_EXPORT_USE_TRANSACTIONS = True
 
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+
 MIDDLEWARE = [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -123,7 +133,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
@@ -139,3 +149,18 @@ STATICFILES_DIRS = [
 
 LOGIN_REDIRECT_URL = "index"
 LOGIN_URL = 'login'
+
+mimetypes.add_type("application/javascript", ".js", True)
+
+DEBUG_TOOLBAR_PATCH_SETTINGS = False
+
+def show_toolbar(request):
+    return True
+    
+DEBUG_TOOLBAR_CONFIG = {
+'INTERCEPT_REDIRECTS': False,
+"SHOW_TOOLBAR_CALLBACK": show_toolbar,
+'INSERT_BEFORE': '</head>',
+'INTERCEPT_REDIRECTS': False,
+'RENDER_PANELS': True,
+}

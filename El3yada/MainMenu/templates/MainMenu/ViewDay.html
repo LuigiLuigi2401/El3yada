@@ -1,0 +1,44 @@
+{%extends 'layout.html' %}
+{%load crispy_forms_tags%}
+{%block content%}
+      {%if user.first_name%}
+      <h1 class="text-center my-5">Welcome, {{user.first_name}} {{user.last_name}}</h1>
+      {%else%}
+      <h1 class="text-center my-5">Welcome, {{user.username}}</h1>
+      {%endif%}
+      <div class="container">
+      {%if messages%}
+      {%for message in messages%}
+            <div class="alert alert-{{message.tags}} text-center">{{message}}</div>
+      {%endfor%}
+      {%endif%}
+      </div>
+      <div class="container-fluid table-responsive mt-3 mb-5">
+            <table class="table table-sm table-bordered caption-top mb-5">
+                <caption>List of Appointments Today</caption>
+                  <tr>
+                        {%for x in columns%}
+                        <th>{{x}}</th>
+                        {%endfor%}
+                  </tr>
+            {%if lists%}
+                  {%for list in lists%}
+                        <tr>
+                        {%for item in list%}
+                              {%if forloop.counter0 == 8%}
+                              <td>
+                                    <form method="post" id="myform{{forloop.parentloop.counter0}}">
+                                          {%csrf_token%}
+                                          <input type="hidden" name="name" value="{{list.0}}"> 
+                                          <a onclick="document.getElementById('myform{{forloop.parentloop.counter0}}').submit();" href="#" >{{item}}</a>
+                                    </form>
+                              </td>
+                              {%else%}
+                              <td>{{item}}</td>
+                              {%endif%}
+                        {%endfor%}
+                        </tr>
+                  {%endfor%}
+            {%endif%}
+      </div>
+{%endblock%}
