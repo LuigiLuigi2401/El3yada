@@ -1,24 +1,27 @@
 {%extends 'layout.html' %}
 {%load crispy_forms_tags%}
+{%load util%}
 {%block content%}
       {%if user.first_name%}
-      <h1 class="text-center my-5">Welcome, {{user.first_name}} {{user.last_name}}</h1>
+            <h1 class="text-center my-5">Welcome, {{user.first_name}} {{user.last_name}}</h1>
       {%else%}
-      <h1 class="text-center my-5">Welcome, {{user.username}}</h1>
+            <h1 class="text-center my-5">Welcome, {{user.username}}</h1>
       {%endif%}
-      <div class="container">
-      {%if messages%}
-      {%for message in messages%}
-            <div class="alert alert-{{message.tags}} text-center">{{message}}</div>
-      {%endfor%}
-      {%endif%}
-      </div>
+      
+            {%if messages%}
+            <div class="container">
+                  {%for message in messages%}
+                        <div class="alert alert-{{message.tags}} text-center">{{message}}</div>
+                  {%endfor%}
+            </div>
+            {%endif%}
+      
       <div class="container-fluid">
             <form class="mb-4" method="post">
                   {%csrf_token%}
                   <div class="row mb-4">
                     <div class="col">
-                      <input type="text" class="form-control" placeholder="Search" name="search">
+                        <input type="text" class="form-control" placeholder="Search" name="search">
                     </div>
                     <div class="col">
                         <select class="form-select" name="choice">
@@ -41,8 +44,9 @@
                   </div>
             </form>
       </div>
+      
       <div class="container-fluid table-responsive mt-3 mb-5">
-            <table class="table table-sm table-bordered caption-top mb-5">
+            <table class="table table-sm table-bordered caption-top">
                   {%if choice == 'Name'%}
                         {%if dbchoice == 'Appointments'%}
                         <caption>List of Appointments where the patient's name contains {{name}}</caption>
@@ -90,5 +94,24 @@
                         </tr>
                   {%endfor%}
             {%endif%}
-      </div>
+            </table>
+            <div class="row mb-4">
+                  <div class="col text-center">
+                        {%if request.method == "GET" and not request.GET.page == None and request.GET.page|get_type%}
+                              Page {{request.GET.page}}
+                        {% else %}
+                              Page 1
+                        {% endif %}
+                  </div>
+                  <div class="col">
+                        <form class="mb-4" method="GET">
+                              {%if request.method == "GET" and not request.GET.page == None and request.GET.page|get_type%}
+                                    <input type="number" class="form-control text-center" name="page" value='{{request.GET.page}}'>
+                              {% else %}
+                                    <input type="number" class="form-control text-center" name="page" value='1'>
+                              {% endif %}
+                              
+                        </form>
+                  </div>
+            </div>
 {%endblock%}

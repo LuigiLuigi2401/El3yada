@@ -12,6 +12,8 @@ from rest_framework import permissions
 from .serializers import UserSerializer, GroupSerializer , PatientSerializer,AppointmentSerializer
 from .forms import PatientForm, UpdatePatientForm , UpdateExtraInfo, AppointmentForm , FrontEndAppointment
 from datetime import date
+from django.core.paginator import Paginator
+
 
 
 # Create your views here.
@@ -158,59 +160,95 @@ def AppointmentView(request,Aser):
 
 @login_required
 def index(request):
-    listofcolumns = list(vars(appointments).keys())[10:-2]
-    listofcolumns.remove('get_DoneBy_display')
-    listofcolumns.remove('get_MoneyBy_display')
-    listofcolumns.remove('get_DocName_display')
     if request.method == 'POST':
+        listofcolumns = list(vars(appointments).keys())[10:-2]
+        listofcolumns.remove('get_DoneBy_display')
+        listofcolumns.remove('get_MoneyBy_display')
+        listofcolumns.remove('get_DocName_display')
         name = request.POST.get("search")
         choice = request.POST.get("choice")
         dbchoice = request.POST.get("dbchoice")
         if choice not in ['Name','Mobile Phone Number','Doctor Name'] or name == '' or dbchoice not in ['Patients',"Appointments"]:
             listofvars=[]
             return render(request,"MainMenu/index.html",{"lists":listofvars,'columns':listofcolumns})
-        listofvars=[]
+        listofvars = []
+        listofvars=Search(name,choice,dbchoice,listofvars,1)
+        request.session['Search'] = request.POST
         if dbchoice == 'Patients' and not choice == 'Doctor Name':
-            listofcolumns = list(vars(patient).keys())[6:-2]
-        if choice == 'Name':
-            if dbchoice == 'Appointments':
-                for count,object in enumerate(appointments.objects.filter(Aname__contains=name)):
-                    listofvars.append([])
-                    for var in vars(object):
-                        listofvars[count].append(getattr(object,var))
-                    listofvars[count] = listofvars[count][2:]  
-            else:
-                for count,object in enumerate(patient.objects.filter(PName__contains=name)):
-                    listofvars.append([])
-                    for var in vars(object):
-                        listofvars[count].append(getattr(object,var))
-                    listofvars[count] = listofvars[count][2:]  
-        elif choice == 'Doctor Name' and dbchoice == 'Appointments':
-            for count,object in enumerate(appointments.objects.filter(DocName__contains=name)):
+                listofcolumns = list(vars(patient).keys())[6:-2]
+        format = "%Y-%m-%d"
+        today = date.today().strftime(format)
+        
+        return render(request,"MainMenu/index.html",{"lists":listofvars,"choice":choice,"name":name,"columns":listofcolumns,"dbchoice":dbchoice,'today':today})
+    else:
+        if request.session.has_key('Search'):
+            page = 1
+            if request.GET.get('page') and type(request.GET.get('page')) is int:
+                page = request.GET.get('page')
+            listofcolumns = list(vars(appointments).keys())[10:-2]
+            listofcolumns.remove('get_DoneBy_display')
+            listofcolumns.remove('get_MoneyBy_display')
+            listofcolumns.remove('get_DocName_display')
+            name = request.session['Search'].get("search")
+            choice = request.session['Search'].get("choice")
+            dbchoice = request.session['Search'].get("dbchoice")
+            if choice not in ['Name','Mobile Phone Number','Doctor Name'] or name == '' or dbchoice not in ['Patients',"Appointments"]:
+                listofvars=[]
+                return render(request,"MainMenu/index.html",{"lists":listofvars,'columns':listofcolumns})
+            listofvars = []
+            listofvars=Search(name,choice,dbchoice,listofvars,request.GET.get('page'))
+            if dbchoice == 'Patients' and not choice == 'Doctor Name':
+                listofcolumns = list(vars(patient).keys())[6:-2]
+            format = "%Y-%m-%d"
+            today = date.today().strftime(format)
+            return render(request,"MainMenu/index.html",{"lists":listofvars,"choice":choice,"name":name,"columns":listofcolumns,"dbchoice":dbchoice,'today':today})
+
+        else:
+            listofcolumns = list(vars(appointments).keys())[10:-2]
+            listofcolumns.remove('get_DoneBy_display')
+            listofcolumns.remove('get_MoneyBy_display')
+            listofcolumns.remove('get_DocName_display')  
+            listofvars = []
+            format = "%Y-%m-%d"
+            today = date.today().strftime(format)
+            return render(request,"MainMenu/index.html",{"lists":listofvars,"columns":listofcolumns,'today':today})
+
+    
+
+def Search(name,choice,dbchoice,listofvars,page):
+    if choice == 'Name':
+        if dbchoice == 'Appointments':
+            for count,object in enumerate(Paginator(appointments.objects.filter(Aname__contains=name),25).get_page(page)):
+                listofvars.append([])
+                for var in vars(object):
+                    listofvars[count].append(getattr(object,var))
+                listofvars[count] = listofvars[count][2:]  
+        else:
+            for count,object in enumerate(Paginator(patient.objects.filter(PName__contains=name), 25).get_page(page)):
+                listofvars.append([])
+                for var in vars(object):
+                    listofvars[count].append(getattr(object,var))
+                listofvars[count] = listofvars[count][2:]  
+    elif choice == 'Doctor Name' and dbchoice == 'Appointments':
+        for count,object in enumerate(Paginator(appointments.objects.filter(DocName__contains=name), 25).get_page(page)):
+            listofvars.append([])
+            for var in vars(object):
+                listofvars[count].append(getattr(object,var))
+            listofvars[count] = listofvars[count][2:]
+    elif choice == 'Mobile Phone Number':
+        if dbchoice == 'Appointments':
+            for count,object in enumerate(Paginator(appointments.objects.filter(Atel=name), 25).get_page(page)):
                 listofvars.append([])
                 for var in vars(object):
                     listofvars[count].append(getattr(object,var))
                 listofvars[count] = listofvars[count][2:]
-        elif choice == 'Mobile Phone Number':
-            if dbchoice == 'Appointments':
-                for count,object in enumerate(appointments.objects.filter(Atel=name)):
-                    listofvars.append([])
-                    for var in vars(object):
-                        listofvars[count].append(getattr(object,var))
-                    listofvars[count] = listofvars[count][2:]
-            else:
-                for count,object in enumerate(patient.objects.filter(Mobile=name)):
-                    listofvars.append([])
-                    for var in vars(object):
-                        listofvars[count].append(getattr(object,var))
-                    listofvars[count] = listofvars[count][2:]
-        return render(request,"MainMenu/index.html",{"lists":listofvars,"choice":choice,"name":name,"columns":listofcolumns,"dbchoice":dbchoice})
-    else:  
-        listofvars = []
-    format = "%Y-%m-%d"
-    today = date.today().strftime(format)
-    return render(request,"MainMenu/index.html",{"lists":listofvars,"columns":listofcolumns,'today':today})
-
+        else:
+            for count,object in enumerate(Paginator(patient.objects.filter(Mobile=name), 25).get_page(page)):
+                listofvars.append([])
+                for var in vars(object):
+                    listofvars[count].append(getattr(object,var))
+                listofvars[count] = listofvars[count][2:]
+    return listofvars
 
 @login_required
 def appointmentadd(request):

@@ -7,7 +7,7 @@ class PatientForm(ModelForm):
     # specify the name of model to use
     class Meta:
         model = patient
-        exclude = ['id','Pro','Co','DELT']
+        exclude = ['id','Pro','Co','DELT','ContC','ContN','Ref']
         widgets = {
             'Sex': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Mobile': Textarea(attrs={'cols': 80, 'rows': 1}),
@@ -60,7 +60,7 @@ class UpdatePatientForm(ModelForm):
     # specify the name of model to use
     class Meta:
         model = patient
-        exclude = ['id','Pro','Co','DELT','Ser']
+        exclude = ['id','Pro','Co','DELT','Ser','ContC','ContN','Ref']
         widgets = {
             'Sex': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Mobile': Textarea(attrs={'cols': 80, 'rows': 1}),
