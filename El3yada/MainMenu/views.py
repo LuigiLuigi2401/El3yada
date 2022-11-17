@@ -98,7 +98,8 @@ def PatientView(request,Ser):
     for object in patient.objects.filter(Ser=Ser):
                     for var in vars(object):
                         PatientList.append(getattr(object,var))
-                    PatientList = PatientList[2:12]
+                    PatientList = PatientList[2:19]
+                    print(PatientList)
     listofcolumns = list(vars(appointments).keys())[10:-2]
     listofcolumns.remove('get_DoneBy_display')
     listofcolumns.remove('get_MoneyBy_display')
@@ -275,6 +276,12 @@ def appointmentadd(request):
                 sub = int(form.cleaned_data.get("Cost")) - int(form.cleaned_data.get("Paid"))
                 if not sub == 0:
                     messages.warning(request,f'Patient paid {form.cleaned_data.get("Paid")} of {form.cleaned_data.get("Cost")}, {sub} remain!')
+                    obj = patient.objects.get(Ser=request.POST["Pser"])
+                    print(obj)
+                    obj.PatNote+=f'{sub} L.E remaining\n'
+                    print(obj.PatNote)
+                    obj.save()
+
                 return redirect('index')
             else:
                 messages.warning(request,f'Error Occurred!')
