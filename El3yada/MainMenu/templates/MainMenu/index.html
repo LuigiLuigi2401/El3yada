@@ -95,23 +95,24 @@
                   {%endfor%}
             {%endif%}
             </table>
-            <div class="row mb-4">
-                  <div class="col text-center">
-                        {%if request.method == "GET" and not request.GET.page == None and request.GET.page|get_type%}
-                              Page {{request.GET.page}}
-                        {% else %}
-                              Page 1
-                        {% endif %}
-                  </div>
-                  <div class="col">
-                        <form class="mb-4" method="GET">
-                              {%if request.method == "GET" and not request.GET.page == None and request.GET.page|get_type%}
-                                    <input type="number" class="form-control text-center" name="page" value='{{request.GET.page}}'>
-                              {% else %}
-                                    <input type="number" class="form-control text-center" name="page" value='1'>
-                              {% endif %}
-                              
-                        </form>
-                  </div>
+      </div>
+      <div class="row mb-4 mx-5">
+            <div class="col text-center">
+                  {%if request.method == "GET" and not request.GET.page == None and request.GET.page|get_type%}
+                        Page {{request.GET.page}}
+                  {% else %}
+                        Page 1
+                  {% endif %}
             </div>
+            <div class="col">
+                  <form class="mb-4" method="GET">
+                        {%if request.method == "GET" and not request.GET.page == None and request.GET.page|get_type%}
+                              <input type="number" class="form-control text-center" name="page" value='{{request.GET.page}}'>
+                        {% else %}
+                              <input type="number" class="form-control text-center" name="page" value='1'>
+                        {% endif %}
+                        
+                  </form>
+            </div>
+      </div>
 {%endblock%}

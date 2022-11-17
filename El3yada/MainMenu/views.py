@@ -14,7 +14,7 @@ from .forms import PatientForm, UpdatePatientForm , UpdateExtraInfo, Appointment
 from datetime import date
 from django.core.paginator import Paginator
 
-
+DEBUG=True
 
 # Create your views here.
 @user_passes_test(lambda user: user.is_superuser)
@@ -51,7 +51,7 @@ def PatientAdd(request):
 def viewday(request,Adate):
     if request.method == "POST":
         Aser = request.POST['name']
-        print(Aser)
+        # print(Aser)
         objtochange = appointments.objects.get(Aser=Aser)
         if objtochange.Arraive:
             objtochange.Arraive = False
@@ -135,7 +135,8 @@ def AppointmentView(request,Aser):
         request.POST = tempdict
         updateform=AppointmentForm(request.POST,instance=obj)
         if updateform.is_valid():
-            updateform.save()
+            if not DEBUG:
+                updateform.save()
             name = updateform.cleaned_data.get("Aser")
             messages.success(request,f'Updated Data For Appointment no. {name}!')
             print('Success')
@@ -252,25 +253,36 @@ def Search(name,choice,dbchoice,listofvars,page):
 
 @login_required
 def appointmentadd(request):
-    if request.method == "POST":
-        print(request.POST)
+    if request.method == "POST" and not request.POST["Pser"] == '':
+        # print(request.POST)
         tempdict = request.POST.copy()
-        name = patient.objects.get(Ser=request.POST["Pser"]).PName
-        phone = patient.objects.get(Ser=request.POST["Pser"]).Phone
-        tel = patient.objects.get(Ser=request.POST["Pser"]).Mobile
-        tempdict['Aname'] = name
-        tempdict['Aphone'] = phone
-        tempdict['Atel'] = tel
-        tempdict['Per'] = appointments.objects.filter(Adate=request.POST['Adate']).count() + 1
-        request.POST = tempdict
-        print(request.POST)
-        form = AppointmentForm(request.POST)
-        if form.is_valid():
-            print('Success')
-            form.save()
-            name = form.cleaned_data.get("PName")
-            messages.success(request,f'Appointment Data Created for {name}')
-            return redirect('index')
+        try:
+            name = patient.objects.get(Ser=request.POST["Pser"]).PName
+            phone = patient.objects.get(Ser=request.POST["Pser"]).Phone
+            tel = patient.objects.get(Ser=request.POST["Pser"]).Mobile
+            tempdict['Aname'] = name
+            tempdict['Aphone'] = phone
+            tempdict['Atel'] = tel
+            tempdict['Per'] = appointments.objects.filter(Adate=request.POST['Adate']).count() + 1
+            request.POST = tempdict
+            # print(request.POST)
+            form = AppointmentForm(request.POST)
+            if form.is_valid() and int(request.POST['Paid'])<int(request.POST['Cost']):
+                print('Success')
+                if not DEBUG:
+                    form.save()
+                messages.success(request,f'Appointment Data Created for {name}')
+                sub = int(form.cleaned_data.get("Cost")) - int(form.cleaned_data.get("Paid"))
+                if not sub == 0:
+                    messages.warning(request,f'Patient paid {form.cleaned_data.get("Paid")} of {form.cleaned_data.get("Cost")}, {sub} remain!')
+                return redirect('index')
+            else:
+                messages.warning(request,f'Error Occurred!')
+        except patient.DoesNotExist:
+            messages.warning(request,f'Error Occurred! Patient Does Not Exist!')
+        
+        
+
     lastnum = int(appointments.objects.last().Aser) + 1
     todaydate = date.today()
     if request.user.get_full_name():

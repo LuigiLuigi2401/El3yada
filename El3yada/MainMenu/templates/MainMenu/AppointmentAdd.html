@@ -2,6 +2,13 @@
 {%load crispy_forms_tags%}
 {%block content%}
       <h1 class="text-center">Welcome, {{user.first_name}} {{user.last_name}}</h1>
+      {%if messages%}
+            <div class="container">
+                  {%for message in messages%}
+                        <div class="alert alert-{{message.tags}} text-center">{{message}}</div>
+                  {%endfor%}
+            </div>
+            {%endif%}
       <!-- Registration -->
       <div class="container content-section mb-5">
             <form method="post">

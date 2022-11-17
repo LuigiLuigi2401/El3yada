@@ -1,6 +1,7 @@
 from email.policy import default
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MaxValueValidator
 class appointments(models.Model):
     Aser = models.IntegerField(unique=True,null=True)
     Pser = models.IntegerField(null=True,blank=True)
@@ -29,6 +30,7 @@ class appointments(models.Model):
     DocName = models.TextField(null=True,blank=True,choices=DOC_CHOICES,default='manal')
     Fees = models.IntegerField(null=True,blank=True)
     Cost = models.IntegerField(null=True,blank=True)
+    Paid = models.IntegerField(null=True,blank=True)
     Seen = models.BooleanField(null=True,blank=True)
     DoneBy = models.TextField(null=True,blank=True,choices=DoneByChoices,default=admin)
     Per = models.IntegerField(null=True,blank=True)
