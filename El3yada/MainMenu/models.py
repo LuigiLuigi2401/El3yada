@@ -31,6 +31,7 @@ class appointments(models.Model):
     Fees = models.IntegerField(null=True,blank=True)
     Cost = models.IntegerField(null=True,blank=True)
     Paid = models.IntegerField(null=True,blank=True)
+    ShouldPay = models.BooleanField(null=True,blank=True,default=True)
     Seen = models.BooleanField(null=True,blank=True)
     DoneBy = models.TextField(null=True,blank=True,choices=DoneByChoices,default=admin)
     Per = models.IntegerField(null=True,blank=True)
