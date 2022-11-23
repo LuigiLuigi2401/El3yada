@@ -10,11 +10,6 @@
       {%endif%}
       
       {%if messages%}
-      <div class="container">
-            {%for message in messages%}
-                  <div class="alert alert-{{message.tags}} text-center">{{message}}</div>
-            {%endfor%}
-      </div>
       <div aria-live="polite" aria-atomic="true" class="position-relative mb-4">
             <!-- Position it: -->
             <!-- - `.toast-container` for spacing between toasts -->

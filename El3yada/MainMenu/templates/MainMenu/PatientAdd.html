@@ -2,6 +2,29 @@
 {%load crispy_forms_tags%}
 {%block content%}
       <h1 class="text-center">Welcome, {{user.first_name}} {{user.last_name}}</h1>
+      {%if messages%}
+      <div aria-live="polite" aria-atomic="true" class="position-relative mb-4">
+            <!-- Position it: -->
+            <!-- - `.toast-container` for spacing between toasts -->
+            <!-- - `top-0` & `end-0` to position the toasts in the upper right corner -->
+            <!-- - `.p-3` to prevent the toasts from sticking to the edge of the container  -->
+            <div class="toast-container position-fixed bottom-0 end-0 p-3 mb-4">
+                  {%for message in messages%}
+              <!-- Then put toasts within -->
+              <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header">
+                  <img src="{%static 'login/gfx.svg'%}" class="rounded me-2" width="20" height="20" alt="logo">
+                  <strong class="me-auto">El3yada</strong>
+                  <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                  {{message}}
+                </div>
+              </div>
+              {%endfor%}
+            </div>
+      </div>
+      {%endif%}
       <!-- Registration -->
       <div class="container content-section mb-5">
             <form method="post">
