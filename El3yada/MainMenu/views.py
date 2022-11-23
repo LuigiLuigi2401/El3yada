@@ -268,12 +268,13 @@ def appointmentadd(request):
             request.POST = tempdict
             # print(request.POST)
             form = AppointmentForm(request.POST)
-            if form.is_valid() and int(request.POST['Paid'])<int(request.POST['Cost']):
+            if form.is_valid() and int(request.POST['Paid'])<=int(request.POST['Cost']):
                 print('Success')
                 if not DEBUG:
                     form.save()
                 messages.success(request,f'Appointment Data Created for {name}')
                 sub = int(form.cleaned_data.get("Cost")) - int(form.cleaned_data.get("Paid"))
+                print(sub)
                 if not sub == 0 and form.cleaned_data.get("ShouldPay") == True:
                     messages.warning(request,f'Patient paid {form.cleaned_data.get("Paid")} of {form.cleaned_data.get("Cost")}, {sub} remain!')
                     obj = patient.objects.get(Ser=request.POST["Pser"])
