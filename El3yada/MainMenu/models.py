@@ -46,6 +46,7 @@ class appointments(models.Model):
 class patient(models.Model):
     Ser = models.IntegerField(unique=True,null=True)
     PName = models.TextField(null=True,blank=True)
+    PatNote = models.TextField(null=True,blank=True)
     BirthDate = models.DateField(null=True,blank=True)
     Sex = models.TextField(null=True,blank=True)
     Job = models.TextField(null=True,blank=True)
@@ -61,7 +62,6 @@ class patient(models.Model):
     Pro = models.TextField(null=True,blank=True)
     DELT = models.BooleanField(null=True,blank=True)
     Debts = models.IntegerField(null=True,blank=True)
-    PatNote = models.TextField(null=True,blank=True)
     def __str__(self):
         return "{0},{1},{2},{3}".format(self.Ser,self.PName,self.Mobile,self.Street)
 

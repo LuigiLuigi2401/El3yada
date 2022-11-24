@@ -77,18 +77,16 @@
             {%if lists%}
                   {%for list in lists%}
                         {%if dbchoice == 'Patients'%}
-                        {%if list.16 > 0%}
-                        <tr class="blink-bg">
-                        {%else%}
                         <tr>
-                        {%endif%}
                         {%for item in list%}
                               {%if item is None%}
                               <td></td>
                               {%elif item == list.1%}
-                                          <td><a href="/patient/{{list.0}}">{{item}}</a></td>
-                              {%elif item == list.17%}
-                                    <td><strong>{{item}}</strong></td>
+                                    <td><a href="/patient/{{list.0}}">{{item}}</a></td>
+                              {%elif item == list.17 and list.17 > 0%}
+                                    <td class='table-danger blink-bg'><strong>{{item}}</strong></td>
+                              {%elif item == list.2 and list.2 != ''%}
+                                    <td class='table-danger blink-bg'><strong>{{item}}</strong></td>
                               {%else%}
                                           <td>{{item}}</td>
                               {%endif%}

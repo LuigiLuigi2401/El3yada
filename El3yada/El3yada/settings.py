@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'debug_toolbar',
     "user_messages",
+    'mathfilters',
 
     'django.contrib.admin',
     'django.contrib.auth',

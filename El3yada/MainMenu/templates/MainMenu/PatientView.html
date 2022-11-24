@@ -1,5 +1,6 @@
 {%extends 'layout.html' %}
 {% load static %}
+{% load mathfilters %}
 {%load crispy_forms_tags%}
 {%block content%}
       <h1 class="text-center">Welcome, {{user.first_name}} {{user.last_name}}</h1>
@@ -18,10 +19,14 @@
             <p>
                 
                 {%for item1,item2 in Plist%}
-                    {%if item1 == "Date of Birth" and patnotes != '' and patnotes != 0%}
-                    <div class="alert alert-danger text-center blink-bg" ><strong>{{patnotes}}</strong></div>
+                    {%if item1 == "Patient Notes" and patnotes != '' and patnotes != 0%}
+                    <div class="alert alert-danger text-center blink-bg" ><strong>{{patnotes}} L.E Remaining</strong></div>
                     {%endif%}
+                    {%if item1 != "Patient Notes"%}
                     {{item1}} : {{item2}}<br>
+                    {%elif item2 != ''%}
+                    <div class="alert alert-danger text-center blink-bg" ><strong>{{item2}}</strong></div>
+                    {%endif%}
                 {%endfor%}
             </p>
             <div class="container-fluid table-responsive mt-3 mb-5">
@@ -33,7 +38,11 @@
                     </tr>
                     {%if lists%}
                         {%for list in lists%}
+                            {%if list.11|sub:list.13 > 0%}
+                            <tr class='blink-bg'>
+                            {%else%}
                             <tr>
+                            {%endif%}
                             {%for item in list%}
                                 {%if item is None%}
                                     <td></td>

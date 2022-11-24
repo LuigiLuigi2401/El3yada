@@ -110,7 +110,7 @@ def PatientView(request,Ser):
                     for var in vars(object):
                         AppointmentList[count].append(getattr(object,var))
                     AppointmentList[count] = AppointmentList[count][2:]
-    listpatientinfo = ['Patient Info','Patient Name','Date of Birth','Sex','Job','Marital Status','Street','Phone Number','Mobile Phone Number','Added on']
+    listpatientinfo = ['Patient Info','Patient Name','Patient Notes','Date of Birth','Sex','Job','Marital Status','Street','Phone Number','Mobile Phone Number','Added on']
     Plist = zip(listpatientinfo, PatientList)
     initialcontext = {}
     for x,y in zip(list(vars(patient).keys())[6:], PatientList):
