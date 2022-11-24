@@ -1,4 +1,4 @@
-import re
+from user_messages import api
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.contrib.auth.forms import UserCreationForm
@@ -24,7 +24,7 @@ def AddUsers(request):
         if form.is_valid():
             form.save()
             username = form.cleaned_data.get("username")
-            messages.success(request,f'Account Created For {username}!')
+            api.success(request.user,f'Account Created For {username}!')
             return redirect('login')
     form = UserCreationForm()
     format = "%Y-%m-%d"
@@ -98,7 +98,7 @@ def PatientView(request,Ser):
     for object in patient.objects.filter(Ser=Ser):
                     for var in vars(object):
                         PatientList.append(getattr(object,var))
-                    PatientList = PatientList[2:20]
+                    PatientList = PatientList[2:21]
                     print(PatientList)
     listofcolumns = list(vars(appointments).keys())[10:-2]
     listofcolumns.remove('get_DoneBy_display')
@@ -119,7 +119,8 @@ def PatientView(request,Ser):
     extraform = UpdateExtraInfo()
     format = "%Y-%m-%d"
     today = date.today().strftime(format)
-    return render(request,"MainMenu/PatientView.html",{'Plist':Plist,'lists':AppointmentList,'columns':listofcolumns,'uform':updateform,'hform':extraform,'today':today})
+    Debts = getattr(patient.objects.get(Ser=Ser),'Debts')
+    return render(request,"MainMenu/PatientView.html",{'Plist':Plist,'lists':AppointmentList,'columns':listofcolumns,'uform':updateform,'hform':extraform,'today':today,'patnotes':Debts})
 
 @login_required
 def AppointmentView(request,Aser):
@@ -268,22 +269,48 @@ def appointmentadd(request):
             request.POST = tempdict
             # print(request.POST)
             form = AppointmentForm(request.POST)
-            if form.is_valid() and int(request.POST['Paid'])<=int(request.POST['Cost']):
-                print('Success')
-                if not DEBUG:
-                    form.save()
-                messages.success(request,f'Appointment Data Created for {name}')
-                sub = int(form.cleaned_data.get("Cost")) - int(form.cleaned_data.get("Paid"))
-                print(sub)
-                if not sub == 0 and form.cleaned_data.get("ShouldPay") == True:
-                    messages.warning(request,f'Patient paid {form.cleaned_data.get("Paid")} of {form.cleaned_data.get("Cost")}, {sub} remain!')
+            if form.is_valid() and not form.cleaned_data.get("Paid")==None and not form.cleaned_data.get("Fees")==None:
+                if not form.cleaned_data.get("Arem").lower() == 'payment':
+                    print('Success')
+                    if not DEBUG:
+                        form.save()
+                    for user in User.objects.all():
+                        api.success(user,f'Appointment Data Created for {name}')
+                    sub = int(form.cleaned_data.get("Fees")) - int(form.cleaned_data.get("Paid"))
+                    print(sub)
+                    if not sub == 0 and form.cleaned_data.get("ShouldPay") == True:
+                        for user in User.objects.all():
+                            api.warning(user,f'Patient paid {form.cleaned_data.get("Paid")} of {form.cleaned_data.get("Fees")}, {sub} remain!')
+                        obj = patient.objects.get(Ser=request.POST["Pser"])
+                        print(obj)
+                        if obj.Debts == None:
+                            obj.Debts=sub
+                        else:
+                            obj.Debts+=sub
+                        print(obj.Debts)
+                        obj.save()
+                    return redirect('index')
+                elif form.cleaned_data.get("Arem").lower() == 'payment' and int(patient.objects.get(Ser=request.POST["Pser"]).Debts)>0 and int(patient.objects.get(Ser=request.POST["Pser"]).Debts)>=int(form.cleaned_data.get("Paid")):
+                    print('Success')
+                    if not DEBUG:
+                        form.save()
+                    for user in User.objects.all():
+                        api.success(user,f'Appointment Data Created for {name}')
                     obj = patient.objects.get(Ser=request.POST["Pser"])
-                    print(obj)
-                    obj.PatNote+=f'{sub} L.E remaining\n'
-                    print(obj.PatNote)
-                    obj.save()
-
-                return redirect('index')
+                    sub = int(obj.Debts) - int(form.cleaned_data.get("Paid"))
+                    print(sub)
+                    if not form.cleaned_data.get("Paid") == None:
+                        for user in User.objects.all():
+                            api.warning(user,f'Patient paid {form.cleaned_data.get("Paid")} of {obj.Debts}, {sub} remain!')
+                        
+                        print(obj)
+                        obj.Debts=sub
+                        print(obj.Debts)
+                        obj.save()
+                    return redirect('index')
+                else:
+                    messages.warning(request,f'Error Occurred!')
+                
             else:
                 messages.warning(request,f'Error Occurred!')
         except patient.DoesNotExist:

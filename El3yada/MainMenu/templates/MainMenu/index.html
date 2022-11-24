@@ -10,29 +10,17 @@
       {%endif%}
       
       {%if messages%}
-      <div aria-live="polite" aria-atomic="true" class="position-relative mb-4">
-            <!-- Position it: -->
-            <!-- - `.toast-container` for spacing between toasts -->
-            <!-- - `top-0` & `end-0` to position the toasts in the upper right corner -->
-            <!-- - `.p-3` to prevent the toasts from sticking to the edge of the container  -->
-            <div class="toast-container position-fixed bottom-0 end-0 p-3 mb-4">
+            <div class="container">
                   {%for message in messages%}
-              <!-- Then put toasts within -->
-              <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="toast-header">
-                  <img src="{%static 'login/gfx.svg'%}" class="rounded me-2" width="20" height="20" alt="logo">
-                  <strong class="me-auto">El3yada</strong>
-                  <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-                <div class="toast-body">
-                  {{message}}
-                </div>
-              </div>
-              {%endfor%}
+                        {%if message.tags == "warning"%}
+                        <div class="alert alert-{{message.tags}} text-center blink-bg" >{{message}}</div>
+                        {%else%}
+                        <div class="alert alert-{{message.tags}} text-center" >{{message}}</div>
+                        {%endif%}
+                  {%endfor%}
             </div>
-      </div>
-      {%endif%}
-      
+            {%endif%}
+
       <div class="container-fluid">
             <form class="mb-4" method="post">
                   {%csrf_token%}
@@ -88,27 +76,39 @@
                   </tr>
             {%if lists%}
                   {%for list in lists%}
+                        {%if dbchoice == 'Patients'%}
+                        {%if list.16 > 0%}
+                        <tr class="blink-bg">
+                        {%else%}
                         <tr>
+                        {%endif%}
                         {%for item in list%}
                               {%if item is None%}
                               <td></td>
                               {%elif item == list.1%}
-                                    {%if dbchoice == 'Patients'%}
                                           <td><a href="/patient/{{list.0}}">{{item}}</a></td>
-                                    {%else%}
-                                          <td>{{item}}</td>
-                                    {%endif%}
+                              {%elif item == list.17%}
+                                    <td><strong>{{item}}</strong></td>
                               {%else%}
-                                    {%if dbchoice == 'Appointments' and item == list.2%}
+                                          <td>{{item}}</td>
+                              {%endif%}
+                        {%endfor%}
+                        </tr>
+                        {%elif dbchoice == 'Appointments'%}
+                        <tr>
+                              {%for item in list%}
+                                    {%if item is None%}
+                                    <td></td>
+                                    {%elif item == list.2%}
                                           <td><a href="/patient/{{list.1}}">{{item}}</a></td>
-                                    {%elif dbchoice == 'Appointments' and item == list.0%}
+                                    {%elif item == list.0%}
                                           <td><a href="/appointment/{{list.0}}">{{item}}</a></td>
                                     {%else%}
                                           <td>{{item}}</td>
                                     {%endif%}
-                              {%endif%}
-                        {%endfor%}
+                              {%endfor%}
                         </tr>
+                        {%endif%}
                   {%endfor%}
             {%endif%}
             </table>

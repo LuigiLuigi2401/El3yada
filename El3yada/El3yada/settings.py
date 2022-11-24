@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'import_export',
     'rest_framework',
     'debug_toolbar',
+    "user_messages",
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -54,7 +55,7 @@ IMPORT_EXPORT_USE_TRANSACTIONS = True
 
 INTERNAL_IPS = [
     "127.0.0.1",
-    '192.168.1.5'
+    '192.168.1.16'
 ]
 
 MIDDLEWARE = [
@@ -81,6 +82,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'user_messages.context_processors.messages',
             ],
         },
     },

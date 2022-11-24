@@ -6,3 +6,13 @@
 .navbar-brand{
   font-family: sans;
 }
+
+.blink-bg{
+  color: #fff;
+  animation: blinkingBackground 1s infinite;
+}
+@keyframes blinkingBackground{
+  0%		{ background-color: #f00;}
+  50%	{ background-color: #a00;}
+  100%  { background-color: #f00;}
+}

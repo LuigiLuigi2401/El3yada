@@ -60,6 +60,7 @@ class patient(models.Model):
     Co = models.TextField(null=True,blank=True)
     Pro = models.TextField(null=True,blank=True)
     DELT = models.BooleanField(null=True,blank=True)
+    Debts = models.IntegerField(null=True,blank=True)
     PatNote = models.TextField(null=True,blank=True)
     def __str__(self):
         return "{0},{1},{2},{3}".format(self.Ser,self.PName,self.Mobile,self.Street)
