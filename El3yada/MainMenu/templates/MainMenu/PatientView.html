@@ -24,12 +24,12 @@
                     {%endif%}
                     {%if item1 != "Patient Notes"%}
                     {{item1}} : {{item2}}<br>
-                    {%elif item2 != ''%}
+                    {%elif item2 != None and item2 != ''%}
                     <div class="alert alert-danger text-center blink-bg" ><strong>{{item2}}</strong></div>
                     {%endif%}
                 {%endfor%}
             </p>
-            <div class="container-fluid table-responsive mt-3 mb-5">
+            <div class="container-fluid table-responsive mt-3 mb-5 text-nowrap">
                 <table class="table table-sm table-bordered caption-top mb-5">
                     <tr>
                         {%for x in columns%}
@@ -43,6 +43,28 @@
                             {%else%}
                             <tr>
                             {%endif%}
+                            {%for item in list%}
+                                {%if item is None%}
+                                    <td></td>
+                                {%else%}
+                                        <td>{{item}}</td>
+                                {%endif%}
+                            {%endfor%}
+                            </tr>
+                        {%endfor%}
+                    {%endif%}
+                </table>
+            </div>
+            <div class="container-fluid table-responsive mt-3 mb-5 text-nowrap">
+                <table class="table table-sm table-bordered caption-top mb-5">
+                    <tr>
+                        {%for x in columnspayment%}
+                        <th>{{x}}</th>
+                        {%endfor%}
+                    </tr>
+                    {%if Paylists%}
+                        {%for list in Paylists%}
+                            <tr>
                             {%for item in list%}
                                 {%if item is None%}
                                     <td></td>

@@ -3,14 +3,14 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
-from MainMenu.models import appointments,patient
+from MainMenu.models import appointments,patient,Payments
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User, Group
 from rest_framework import viewsets
 from rest_framework import permissions
 from .serializers import UserSerializer, GroupSerializer , PatientSerializer,AppointmentSerializer
-from .forms import PatientForm, UpdatePatientForm , UpdateExtraInfo, AppointmentForm , FrontEndAppointment
+from .forms import PatientForm, UpdatePatientForm , UpdateExtraInfo, AppointmentForm , FrontEndAppointment, PaymentForm
 from datetime import date
 from django.core.paginator import Paginator
 
@@ -59,7 +59,7 @@ def viewday(request,Adate):
             objtochange.Arraive = True
         objtochange.save()
     obj = appointments.objects.filter(Adate=Adate)
-    listofcolumns = list(vars(appointments).keys())[10:-2]
+    listofcolumns = list(vars(appointments).keys())[10:-3]
     listofcolumns.remove('get_DoneBy_display')
     listofcolumns.remove('get_MoneyBy_display')
     listofcolumns.remove('get_DocName_display')
@@ -100,7 +100,7 @@ def PatientView(request,Ser):
                         PatientList.append(getattr(object,var))
                     PatientList = PatientList[2:21]
                     print(PatientList)
-    listofcolumns = list(vars(appointments).keys())[10:-2]
+    listofcolumns = list(vars(appointments).keys())[10:-3]
     listofcolumns.remove('get_DoneBy_display')
     listofcolumns.remove('get_MoneyBy_display')
     listofcolumns.remove('get_DocName_display')
@@ -112,6 +112,19 @@ def PatientView(request,Ser):
                     AppointmentList[count] = AppointmentList[count][2:]
     listpatientinfo = ['Patient Info','Patient Name','Patient Notes','Date of Birth','Sex','Job','Marital Status','Street','Phone Number','Mobile Phone Number','Added on']
     Plist = zip(listpatientinfo, PatientList)
+
+    listofcolumnspayment = list(vars(Payments).keys())[7:-4]
+    PaymentList = []
+    for count,object in enumerate(Payments.objects.filter(Appointment__Pser=Ser)):
+                    PaymentList.append([])
+                    for var in vars(object):
+                        print(var)
+                        if var == 'Appointment_id':
+                            PaymentList[count].append(appointments.objects.get(pk=object.Appointment.pk).Aser)
+                        else:
+                            PaymentList[count].append(getattr(object,var))
+                    PaymentList[count] = PaymentList[count][2:]
+   
     initialcontext = {}
     for x,y in zip(list(vars(patient).keys())[6:], PatientList):
         initialcontext[x] = y
@@ -120,7 +133,7 @@ def PatientView(request,Ser):
     format = "%Y-%m-%d"
     today = date.today().strftime(format)
     Debts = getattr(patient.objects.get(Ser=Ser),'Debts')
-    return render(request,"MainMenu/PatientView.html",{'Plist':Plist,'lists':AppointmentList,'columns':listofcolumns,'uform':updateform,'hform':extraform,'today':today,'patnotes':Debts})
+    return render(request,"MainMenu/PatientView.html",{'Plist':Plist,'Paylists':PaymentList,'columnspayment':listofcolumnspayment,'lists':AppointmentList,'columns':listofcolumns,'uform':updateform,'hform':extraform,'today':today,'patnotes':Debts})
 
 @login_required
 def AppointmentView(request,Aser):
@@ -142,7 +155,7 @@ def AppointmentView(request,Aser):
             name = updateform.cleaned_data.get("Aser")
             messages.success(request,f'Updated Data For Appointment no. {name}!')
             print('Success')
-    listofcolumns = list(vars(appointments).keys())[10:-2]
+    listofcolumns = list(vars(appointments).keys())[10:-3]
     listofcolumns.remove('get_DoneBy_display')
     listofcolumns.remove('get_MoneyBy_display')
     listofcolumns.remove('get_DocName_display')
@@ -164,7 +177,7 @@ def AppointmentView(request,Aser):
 @login_required
 def index(request):
     if request.method == 'POST':
-        listofcolumns = list(vars(appointments).keys())[10:-2]
+        listofcolumns = list(vars(appointments).keys())[10:-3]
         listofcolumns.remove('get_DoneBy_display')
         listofcolumns.remove('get_MoneyBy_display')
         listofcolumns.remove('get_DocName_display')
@@ -187,8 +200,11 @@ def index(request):
         if request.session.has_key('Search'):
             page = 1
             if request.GET.get('page') and type(request.GET.get('page')) is int:
-                page = request.GET.get('page')
-            listofcolumns = list(vars(appointments).keys())[10:-2]
+                if request.GET.get('page') > 0:
+                    page = request.GET.get('page')
+                else:
+                    page=1
+            listofcolumns = list(vars(appointments).keys())[10:-3]
             listofcolumns.remove('get_DoneBy_display')
             listofcolumns.remove('get_MoneyBy_display')
             listofcolumns.remove('get_DocName_display')
@@ -199,7 +215,7 @@ def index(request):
                 listofvars=[]
                 return render(request,"MainMenu/index.html",{"lists":listofvars,'columns':listofcolumns})
             listofvars = []
-            listofvars=Search(name,choice,dbchoice,listofvars,request.GET.get('page'))
+            listofvars=Search(name,choice,dbchoice,listofvars,page)
             if dbchoice == 'Patients' and not choice == 'Doctor Name':
                 listofcolumns = list(vars(patient).keys())[6:-2]
             format = "%Y-%m-%d"
@@ -207,7 +223,7 @@ def index(request):
             return render(request,"MainMenu/index.html",{"lists":listofvars,"choice":choice,"name":name,"columns":listofcolumns,"dbchoice":dbchoice,'today':today})
 
         else:
-            listofcolumns = list(vars(appointments).keys())[10:-2]
+            listofcolumns = list(vars(appointments).keys())[10:-3]
             listofcolumns.remove('get_DoneBy_display')
             listofcolumns.remove('get_MoneyBy_display')
             listofcolumns.remove('get_DocName_display')  
@@ -265,6 +281,7 @@ def appointmentadd(request):
             tempdict['Aname'] = name
             tempdict['Aphone'] = phone
             tempdict['Atel'] = tel
+            tempdict['Paid'] = 0
             tempdict['Per'] = appointments.objects.filter(Adate=request.POST['Adate']).count() + 1
             request.POST = tempdict
             # print(request.POST)
@@ -275,38 +292,21 @@ def appointmentadd(request):
                     if not DEBUG:
                         form.save()
                     for user in User.objects.all():
-                        api.success(user,f'Appointment Data Created for {name}')
-                    sub = int(form.cleaned_data.get("Fees")) - int(form.cleaned_data.get("Paid"))
+                        doc = form.cleaned_data.get("DocName")
+                        api.success(user,f'Appointment Data Created for {name}with the Service {form.cleaned_data.get("Arem")} for Doctor {[x for (y, x) in appointments.DOC_CHOICES if y == doc][0]} and Fees of {form.cleaned_data.get("Fees")} L.E.')
+                    sub = int(form.cleaned_data.get("Fees"))
                     print(sub)
-                    if not sub == 0 and form.cleaned_data.get("ShouldPay") == True:
-                        for user in User.objects.all():
-                            api.warning(user,f'Patient paid {form.cleaned_data.get("Paid")} of {form.cleaned_data.get("Fees")}, {sub} remain!')
+                    if form.cleaned_data.get("ShouldPay") == True:
                         obj = patient.objects.get(Ser=request.POST["Pser"])
                         print(obj)
                         if obj.Debts == None:
                             obj.Debts=sub
                         else:
-                            obj.Debts+=sub
+                            obj.Debts = int(obj.Debts) + sub
                         print(obj.Debts)
                         obj.save()
-                    return redirect('index')
-                elif form.cleaned_data.get("Arem").lower() == 'payment' and int(patient.objects.get(Ser=request.POST["Pser"]).Debts)>0 and int(patient.objects.get(Ser=request.POST["Pser"]).Debts)>=int(form.cleaned_data.get("Paid")):
-                    print('Success')
-                    if not DEBUG:
-                        form.save()
-                    for user in User.objects.all():
-                        api.success(user,f'Appointment Data Created for {name}')
-                    obj = patient.objects.get(Ser=request.POST["Pser"])
-                    sub = int(obj.Debts) - int(form.cleaned_data.get("Paid"))
-                    print(sub)
-                    if not form.cleaned_data.get("Paid") == None:
                         for user in User.objects.all():
-                            api.warning(user,f'Patient paid {form.cleaned_data.get("Paid")} of {obj.Debts}, {sub} remain!')
-                        
-                        print(obj)
-                        obj.Debts=sub
-                        print(obj.Debts)
-                        obj.save()
+                            api.warning(user,f'Patient Debts increased to {obj.Debts}')
                     return redirect('index')
                 else:
                     messages.warning(request,f'Error Occurred!')
@@ -332,6 +332,36 @@ def appointmentadd(request):
         'today':today
     }
     return render(request,'MainMenu/AppointmentAdd.html',context)
+
+
+@login_required
+def payment(request,Pser):
+    if request.method == 'POST':
+        form = PaymentForm(Pser,request.POST)
+        patobj = patient.objects.get(Ser=Pser)
+        appobj = appointments.objects.get(pk=request.POST['Appointment'])
+        paidamount = int(request.POST['Paid_Amount'])
+        print(form)
+        if form.is_valid and patobj.Debts is not None and patobj.Debts>0 and paidamount<=patobj.Debts and paidamount<=(appobj.Fees-appobj.Paid):
+            print(patobj,appobj)
+            patobj.Debts-=paidamount
+            if appobj.Paid == None:
+                appobj.Paid=paidamount
+            else:
+                appobj.Paid+=paidamount
+            print(patobj,appobj,appobj.Paid,patobj.Debts)
+            print('success')
+            if not DEBUG:
+                patobj.save()
+                appobj.save()
+                form.save()
+
+    form = PaymentForm(Pser)
+    context={
+        'form' : form
+    }
+    return render(request,'MainMenu/payment.html',context=context)
+
 class UserViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
@@ -361,7 +391,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = AppointmentSerializer
-    def get_queryset(self, name=None,doctor=None):
+    def get_queryset(self, name=None,doctor=None,num=None):
         name = self.request.query_params.get('name')
         doctor = self.request.query_params.get('doctor')
         num = self.request.query_params.get('Aser')
