@@ -38,7 +38,7 @@ class AppointmentForm(ModelForm):
             'Aser': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Pser': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Adate': Textarea(attrs={'cols': 80, 'rows': 1}),
-            'Arem': Textarea(attrs={'cols': 80, 'rows': 1}),
+            # 'Arem': Textarea(attrs={'cols': 80, 'rows': 1}),
             # 'DocName': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Fees': Textarea(attrs={'cols': 80, 'rows': 1}),
 

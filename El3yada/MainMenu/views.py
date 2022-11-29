@@ -341,8 +341,11 @@ def payment(request,Pser):
         patobj = patient.objects.get(Ser=Pser)
         appobj = appointments.objects.get(pk=request.POST['Appointment'])
         paidamount = int(request.POST['Paid_Amount'])
-        print(form)
-        if form.is_valid and patobj.Debts is not None and patobj.Debts>0 and paidamount<=patobj.Debts and paidamount<=(appobj.Fees-appobj.Paid):
+        if appobj.Paid == None:
+            subcheck = paidamount<=(appobj.Fees)
+        else:
+            subcheck = paidamount<=(appobj.Fees-appobj.Paid)
+        if form.is_valid and patobj.Debts is not None and patobj.Debts>0 and paidamount<=patobj.Debts and subcheck:
             print(patobj,appobj)
             patobj.Debts-=paidamount
             if appobj.Paid == None:
