@@ -19,7 +19,7 @@
             <p>
                 
                 {%for item1,item2 in Plist%}
-                    {%if item1 == "Patient Notes" and patnotes != '' and patnotes != 0%}
+                    {%if item1 == "Patient Notes" and patnotes != '' and patnotes > 0%}
                     <div class="alert alert-danger text-center blink-bg" ><strong>{{patnotes}} L.E Remaining</strong></div>
                     {%endif%}
                     {%if item1 != "Patient Notes"%}
@@ -29,7 +29,19 @@
                     {%endif%}
                 {%endfor%}
             </p>
+            <div class="text-center my-3">
+                <a href="/addappointment/{{Ser}}">
+                    <input type="submit" class="btn btn-primary mx-3" value="Add Appointment">
+                </a>
+            </div>
+            <div class="text-center my-3">
+                <a href="/payment/{{Ser}}">
+                    <input type="submit" class="btn btn-primary mx-3" value="Add Payment">
+                </a>
+            </div>
             <div class="container-fluid table-responsive mt-3 mb-5 text-nowrap">
+                  
+                
                 <table class="table table-sm table-bordered caption-top mb-5">
                     <tr>
                         {%for x in columns%}

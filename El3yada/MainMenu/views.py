@@ -1,18 +1,22 @@
 from user_messages import api
+from rest_framework.views import APIView
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
-from MainMenu.models import appointments,patient,Payments
+from MainMenu.models import *
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User, Group
-from rest_framework import viewsets
-from rest_framework import permissions
-from .serializers import UserSerializer, GroupSerializer , PatientSerializer,AppointmentSerializer
+from rest_framework import permissions,status,viewsets,renderers,serializers,authentication
+from .serializers import *
 from .forms import PatientForm, UpdatePatientForm , UpdateExtraInfo, AppointmentForm , FrontEndAppointment, PaymentForm
 from datetime import date
 from django.core.paginator import Paginator
+from rest_framework.response import Response
+from django.core.serializers import serialize
+from django.http import JsonResponse,HttpResponse
+import json
 
 DEBUG=True
 
@@ -42,7 +46,7 @@ def PatientAdd(request):
             return redirect('index')
     lastnum = int(patient.objects.last().Ser) + 1
     todaydate = date.today()
-    form = PatientForm(initial = {'Ser':lastnum,'Admission':todaydate})
+    form = PatientForm(initial = {'Ser':lastnum,'Admission':todaydate,'Debts':0})
     format = "%Y-%m-%d"
     today = date.today().strftime(format)
     return render(request,"MainMenu/PatientAdd.html",{'form':form,'today':today})
@@ -59,7 +63,8 @@ def viewday(request,Adate):
             objtochange.Arraive = True
         objtochange.save()
     obj = appointments.objects.filter(Adate=Adate)
-    listofcolumns = list(vars(appointments).keys())[10:-3]
+    listofcolumns = list(vars(appointments).keys())[14:-3]
+    listofcolumns.remove('get_Arem_display')
     listofcolumns.remove('get_DoneBy_display')
     listofcolumns.remove('get_MoneyBy_display')
     listofcolumns.remove('get_DocName_display')
@@ -100,7 +105,8 @@ def PatientView(request,Ser):
                         PatientList.append(getattr(object,var))
                     PatientList = PatientList[2:21]
                     print(PatientList)
-    listofcolumns = list(vars(appointments).keys())[10:-3]
+    listofcolumns = list(vars(appointments).keys())[14:-3]
+    listofcolumns.remove('get_Arem_display')
     listofcolumns.remove('get_DoneBy_display')
     listofcolumns.remove('get_MoneyBy_display')
     listofcolumns.remove('get_DocName_display')
@@ -110,7 +116,7 @@ def PatientView(request,Ser):
                     for var in vars(object):
                         AppointmentList[count].append(getattr(object,var))
                     AppointmentList[count] = AppointmentList[count][2:]
-    listpatientinfo = ['Patient Info','Patient Name','Patient Notes','Date of Birth','Sex','Job','Marital Status','Street','Phone Number','Mobile Phone Number','Added on']
+    listpatientinfo = ['Patient No.','Patient Name','Patient Notes','Date of Birth','Sex','Job','Marital Status','Street','Phone Number','Mobile Phone Number','Added on']
     Plist = zip(listpatientinfo, PatientList)
 
     listofcolumnspayment = list(vars(Payments).keys())[7:-4]
@@ -126,14 +132,16 @@ def PatientView(request,Ser):
                     PaymentList[count] = PaymentList[count][2:]
    
     initialcontext = {}
-    for x,y in zip(list(vars(patient).keys())[6:], PatientList):
+    listofpatientkeys = list(vars(patient).keys())[7:-2]
+    listofpatientkeys.remove('get_Sex_display')
+    for x,y in zip(listofpatientkeys, PatientList):
         initialcontext[x] = y
     updateform = UpdatePatientForm(initial=initialcontext)
     extraform = UpdateExtraInfo()
     format = "%Y-%m-%d"
     today = date.today().strftime(format)
     Debts = getattr(patient.objects.get(Ser=Ser),'Debts')
-    return render(request,"MainMenu/PatientView.html",{'Plist':Plist,'Paylists':PaymentList,'columnspayment':listofcolumnspayment,'lists':AppointmentList,'columns':listofcolumns,'uform':updateform,'hform':extraform,'today':today,'patnotes':Debts})
+    return render(request,"MainMenu/PatientView.html",{'Plist':Plist,'Paylists':PaymentList,'columnspayment':listofcolumnspayment,'lists':AppointmentList,'columns':listofcolumns,'uform':updateform,'hform':extraform,'today':today,'patnotes':Debts,'Ser':Ser})
 
 @login_required
 def AppointmentView(request,Aser):
@@ -155,7 +163,8 @@ def AppointmentView(request,Aser):
             name = updateform.cleaned_data.get("Aser")
             messages.success(request,f'Updated Data For Appointment no. {name}!')
             print('Success')
-    listofcolumns = list(vars(appointments).keys())[10:-3]
+    listofcolumns = list(vars(appointments).keys())[14:-3]
+    listofcolumns.remove('get_Arem_display')
     listofcolumns.remove('get_DoneBy_display')
     listofcolumns.remove('get_MoneyBy_display')
     listofcolumns.remove('get_DocName_display')
@@ -177,34 +186,38 @@ def AppointmentView(request,Aser):
 @login_required
 def index(request):
     if request.method == 'POST':
-        listofcolumns = list(vars(appointments).keys())[10:-3]
+        listofcolumns = list(vars(appointments).keys())[14:-3]
+        listofcolumns.remove('get_Arem_display')
         listofcolumns.remove('get_DoneBy_display')
         listofcolumns.remove('get_MoneyBy_display')
         listofcolumns.remove('get_DocName_display')
         name = request.POST.get("search")
         choice = request.POST.get("choice")
         dbchoice = request.POST.get("dbchoice")
-        if choice not in ['Name','Mobile Phone Number','Doctor Name'] or name == '' or dbchoice not in ['Patients',"Appointments"]:
+        if choice not in ['Name','Mobile Phone Number','Doctor Name','Telephone Number'] or name == '' or dbchoice not in ['Patients',"Appointments"]:
             listofvars=[]
             return render(request,"MainMenu/index.html",{"lists":listofvars,'columns':listofcolumns})
         listofvars = []
         listofvars=Search(name,choice,dbchoice,listofvars,1)
         request.session['Search'] = request.POST
         if dbchoice == 'Patients' and not choice == 'Doctor Name':
-                listofcolumns = list(vars(patient).keys())[6:-2]
+                listofcolumns = list(vars(patient).keys())[7:-2]
+                listofcolumns.remove('get_Sex_display')
         format = "%Y-%m-%d"
         today = date.today().strftime(format)
         
-        return render(request,"MainMenu/index.html",{"lists":listofvars,"choice":choice,"name":name,"columns":listofcolumns,"dbchoice":dbchoice,'today':today})
+        return render(request,"MainMenu/index.html",{"lists":listofvars,"choice":choice,"name":name,"columns":listofcolumns,"dbchoice":dbchoice,'today':today,'page':1})
     else:
         if request.session.has_key('Search'):
             page = 1
             if request.GET.get('page') and type(request.GET.get('page')) is int:
                 if request.GET.get('page') > 0:
-                    page = request.GET.get('page')
+                    page = CheckPage(name,choice,dbchoice,page)
                 else:
                     page=1
-            listofcolumns = list(vars(appointments).keys())[10:-3]
+            print(page)
+            listofcolumns = list(vars(appointments).keys())[14:-3]
+            listofcolumns.remove('get_Arem_display')
             listofcolumns.remove('get_DoneBy_display')
             listofcolumns.remove('get_MoneyBy_display')
             listofcolumns.remove('get_DocName_display')
@@ -217,13 +230,15 @@ def index(request):
             listofvars = []
             listofvars=Search(name,choice,dbchoice,listofvars,page)
             if dbchoice == 'Patients' and not choice == 'Doctor Name':
-                listofcolumns = list(vars(patient).keys())[6:-2]
+                listofcolumns = list(vars(patient).keys())[7:-2]
+                listofcolumns.remove('get_Sex_display')
             format = "%Y-%m-%d"
             today = date.today().strftime(format)
-            return render(request,"MainMenu/index.html",{"lists":listofvars,"choice":choice,"name":name,"columns":listofcolumns,"dbchoice":dbchoice,'today':today})
+            return render(request,"MainMenu/index.html",{"lists":listofvars,"choice":choice,"name":name,"columns":listofcolumns,"dbchoice":dbchoice,'today':today,'page':page})
 
         else:
-            listofcolumns = list(vars(appointments).keys())[10:-3]
+            listofcolumns = list(vars(appointments).keys())[14:-3]
+            listofcolumns.remove('get_Arem_display')
             listofcolumns.remove('get_DoneBy_display')
             listofcolumns.remove('get_MoneyBy_display')
             listofcolumns.remove('get_DocName_display')  
@@ -233,6 +248,38 @@ def index(request):
             return render(request,"MainMenu/index.html",{"lists":listofvars,"columns":listofcolumns,'today':today})
 
     
+def CheckPage(name,choice,dbchoice,page):
+    if choice == 'Name':
+        if dbchoice == 'Appointments':
+            numpages = Paginator(appointments.objects.filter(AName__contains=name), 25).num_pages
+            if page > numpages:
+                page = numpages
+        else:
+            numpages = Paginator(patient.objects.filter(PName__contains=name), 25).num_pages
+            if page > numpages:
+                page = numpages  
+    elif choice == 'Doctor Name' and dbchoice == 'Appointments':
+        numpages = Paginator(appointments.objects.filter(DocName__contains=name), 25).num_pages
+        if page > numpages:
+            page = numpages
+    elif choice == 'Mobile Phone Number':
+        if dbchoice == 'Appointments':
+            numpages = Paginator(appointments.objects.filter(Atel__contains=name), 25).num_pages
+            if page > numpages:
+                page = numpages
+        else:
+            numpages = Paginator(patient.objects.filter(Mobile__contains=name), 25).num_pages
+            if page > numpages:
+                page = numpages
+    elif choice == 'Telephone Number':
+        if dbchoice == 'Appointments':
+            numpages = Paginator(appointments.objects.filter(APhone__contains=name), 25).num_pages
+            if page > numpages:
+                page = numpages
+        else:
+            numpages = Paginator(patient.objects.filter(Phone__contains=name), 25).num_pages
+            if page > numpages:
+                page = numpages
 
 def Search(name,choice,dbchoice,listofvars,page):
     if choice == 'Name':
@@ -267,10 +314,24 @@ def Search(name,choice,dbchoice,listofvars,page):
                 for var in vars(object):
                     listofvars[count].append(getattr(object,var))
                 listofvars[count] = listofvars[count][2:]
+    elif choice == 'Telephone Number':
+        if dbchoice == 'Appointments':
+            for count,object in enumerate(Paginator(appointments.objects.filter(Aphone=name), 25).get_page(page)):
+                listofvars.append([])
+                for var in vars(object):
+                    listofvars[count].append(getattr(object,var))
+                listofvars[count] = listofvars[count][2:]
+        else:
+            for count,object in enumerate(Paginator(patient.objects.filter(Phone=name), 25).get_page(page)):
+                listofvars.append([])
+                for var in vars(object):
+                    listofvars[count].append(getattr(object,var))
+                listofvars[count] = listofvars[count][2:]
+
     return listofvars
 
 @login_required
-def appointmentadd(request):
+def appointmentadd(request,Ser):
     if request.method == "POST" and not request.POST["Pser"] == '':
         # print(request.POST)
         tempdict = request.POST.copy()
@@ -286,7 +347,11 @@ def appointmentadd(request):
             request.POST = tempdict
             # print(request.POST)
             form = AppointmentForm(request.POST)
-            if form.is_valid() and not form.cleaned_data.get("Paid")==None and not form.cleaned_data.get("Fees")==None:
+            listofservices = [x['name'] for x in list(Doctor.objects.get(bakcendname=request.POST['DocName']).services.values('name'))]
+            fees = int(Services.objects.get(name=request.POST['Arem']).price)
+            print(fees)
+            # print(form.is_valid(),not form.cleaned_data.get("Paid")==None,form.cleaned_data.get("Fees") is not None,form.cleaned_data.get("Arem") in listofservices)
+            if form.is_valid() and not form.cleaned_data.get("Paid")==None and not form.cleaned_data.get("Fees")==None and form.cleaned_data.get("Arem") in listofservices and fees == int(form.cleaned_data.get("Fees")):
                 if not form.cleaned_data.get("Arem").lower() == 'payment':
                     print('Success')
                     if not DEBUG:
@@ -324,7 +389,7 @@ def appointmentadd(request):
         doneby = request.user.get_full_name()
     else:
         doneby = request.user.username
-    form = FrontEndAppointment(initial={'Aser':lastnum,'Adate':todaydate,'DoneBy':doneby})
+    form = FrontEndAppointment(initial={'Aser':lastnum,'Adate':todaydate,'DoneBy':doneby,'Pser':Ser})
     format = "%Y-%m-%d"
     today = date.today().strftime(format)
     context={
@@ -332,6 +397,13 @@ def appointmentadd(request):
         'today':today
     }
     return render(request,'MainMenu/AppointmentAdd.html',context)
+
+@login_required
+def count(request,category,rowsper):
+    if category=='appointments':
+        return JsonResponse({'count':Paginator(appointments.objects.all(),rowsper).num_pages})
+    elif category=='patients':
+        return JsonResponse({'count':Paginator(patient.objects.all(),rowsper).num_pages})
 
 
 @login_required
@@ -345,19 +417,26 @@ def payment(request,Pser):
             subcheck = paidamount<=(appobj.Fees)
         else:
             subcheck = paidamount<=(appobj.Fees-appobj.Paid)
-        if form.is_valid and patobj.Debts is not None and patobj.Debts>0 and paidamount<=patobj.Debts and subcheck:
+        # print(form.is_valid, patobj.Debts is not None, paidamount<=patobj.Debts , subcheck)
+        if form.is_valid and (patobj.Debts is not None or patobj.Debts>0) and paidamount<=patobj.Debts and subcheck:
             print(patobj,appobj)
+            if not DEBUG:
+                form.save()
             patobj.Debts-=paidamount
             if appobj.Paid == None:
                 appobj.Paid=paidamount
             else:
                 appobj.Paid+=paidamount
-            print(patobj,appobj,appobj.Paid,patobj.Debts)
+            if appobj.Fees-appobj.Paid ==0:
+                appobj.ShouldPay = False
+            print(patobj,appobj,appobj.Paid,patobj.Debts,appobj.ShouldPay)
             print('success')
+            for user in User.objects.all():
+                api.success(user,f'Paid Amount of {paidamount} L.E Succesfully for Patient {patobj.PName}')
             if not DEBUG:
                 patobj.save()
                 appobj.save()
-                form.save()
+                
 
     form = PaymentForm(Pser)
     context={
@@ -372,21 +451,95 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
+    def get_queryset(self,name='',num=0):
+        name =  self.request.query_params.get('name')
+        num =  self.request.query_params.get('num')
+        if not num == 0:
+            queryset = User.objects.filter(id=num)
+        elif not name == '':
+            queryset = User.objects.filter(username=name) 
+        return queryset
+
+class DoctorViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows doctors to be viewed or edited.
+    """
+    serializer_class = DoctorSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    def get_queryset(self,doctor='manal'):
+        doctor = self.request.query_params.get('doctor')
+        if doctor == None:
+            queryset = Doctor.objects.all()
+            return queryset
+        queryset = Doctor.objects.filter(bakcendname=doctor)
+        # else:
+        #     queryset = queryset[0].services
+        return queryset
+
+
+class ServiceViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows services to be viewed or edited.
+    """
+    serializer_class = ServicesSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    def get_queryset(self,service=None):
+        queryset = Services.objects.all()
+        return queryset
+    
+
+class AddNewAppointmentViewSet(APIView):
+    """
+    API endpoint to create appointments
+    """
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self,request):
+        data = {
+            "Aser": appointments.objects.last().Aser + 1,
+            "Pser": 169,
+            "Aname": '',
+            "Arraive": False,
+            "Aphone": '',
+            "Atel": '',
+            "Adate": '2023-03-16',
+            "DocName": "manal",
+            "Fees": 0,
+            "Arem": "كشف",
+            "DoneBy": "MahmoudAboulfadl"
+        }
+        serializer = AppointmentSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 
 class PatientViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows patients to be viewed or edited.
     """
-    queryset = patient.objects.all().order_by('Ser')
     serializer_class = PatientSerializer
     permission_classes = [permissions.IsAuthenticated]
-    def get_queryset(self, name=None,doctor=None):
+    def get_queryset(self, name=None,phone=None,rowsper=25,page=1,count=None,num=None):
         name = self.request.query_params.get('name')
-        if name is not None:
-            queryset = appointments.objects.raw(f'select * from MainMenu_patient where PName like \'%{name}%\' order by Ser')
+        phone = self.request.query_params.get('phone')
+        count= self.request.query_params.get('count')
+        num = self.request.query_params.get('num')
+        rowsper = self.request.query_params.get('rowsper') if self.request.query_params.get('rowsper') is not None else 25
+        page = self.request.query_params.get('page') if self.request.query_params.get('page') is not None else 1
+        if name is not None and phone is None and num is None:
+            queryset = Paginator(patient.objects.filter(PName__contains=name),rowsper)
+        elif name is  None and phone is not None and num is None:
+            queryset = Paginator(patient.objects.filter(Phone__contains=phone),rowsper)
+        elif num is not None and name is None and phone is None:
+            queryset = Paginator(patient.objects.filter(Ser=num),rowsper)
         else:
-            queryset = appointments.objects.all().order_by('Aser')
-        return queryset
+            queryset = Paginator(patient.objects.all().order_by('Ser'),rowsper)
+        if count:
+            return [patient(Phone=f'{queryset.num_pages}')]
+        return queryset.get_page(page)
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     """
@@ -394,20 +547,39 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = AppointmentSerializer
-    def get_queryset(self, name=None,doctor=None,num=None):
+    def get_queryset(self, name=None,doctor=None,num=None,page=1,rowsper=25,count=None):
         name = self.request.query_params.get('name')
         doctor = self.request.query_params.get('doctor')
-        num = self.request.query_params.get('Aser')
+        num = self.request.query_params.get('num')
+        getrowsper=self.request.query_params.get('rowsper')
+        getpage=self.request.query_params.get('page')
+        count = self.request.query_params.get('count')
+        if getpage is not None:page=getpage
+        if getrowsper is not None:rowsper=getrowsper
         if name is not None and doctor is None and num is None:
-            queryset = appointments.objects.raw(f'select * from MainMenu_appointments where Aname like \'%{name}%\' order by Aser')
+            queryset = Paginator(appointments.objects.filter(Aname__contains=name),rowsper)
         elif doctor is not None and name is None and num is None:
-            queryset = appointments.objects.raw(f'select * from MainMenu_appointments where DocName like \'%{doctor}%\' order by Aser')
+            queryset = Paginator(appointments.objects.filter(Aname__contains=doctor),rowsper)
         elif num is not None and name is None and doctor is None:
-            queryset = appointments.objects.raw(f'select * from MainMenu_appointments where Aser == {num}')
+            queryset = Paginator(appointments.objects.filter(Pser=num),rowsper)
         else:
-            queryset = appointments.objects.all().order_by('Aser')
+            queryset = Paginator(appointments.objects.all(),rowsper)
+        if count:
+            return [appointments(Pser=queryset.num_pages)]
+        return queryset.get_page(page)
+
+class AppointmentDayViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows Appointments to be viewed or edited.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AppointmentSerializer
+    format = "%Y-%m-%d"
+    def get_queryset(self,day=date.today().strftime(format)):
+        day=self.request.query_params.get('today') if not self.request.query_params.get('today') == None else day
+        queryset = appointments.objects.filter(Adate=day)
+        print(day)
         return queryset
-    
 
 
 class GroupViewSet(viewsets.ModelViewSet):

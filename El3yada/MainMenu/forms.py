@@ -1,16 +1,17 @@
 from django.forms import ModelForm, Textarea
 from django.db.models import F,Q
 from django.utils.translation import gettext_lazy as _
-from numpy import append
 from .models import appointments, patient,Payments
 
 class PatientForm(ModelForm):
     # specify the name of model to use
+    def __init__(self, *args, **kwargs):
+       super(PatientForm, self).__init__(*args, **kwargs)
+       self.fields['Debts'].widget.attrs['readonly'] = True
     class Meta:
         model = patient
         exclude = ['id','Pro','Co','DELT','ContC','ContN','Ref']
         widgets = {
-            'Sex': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Mobile': Textarea(attrs={'cols': 80, 'rows': 1}),
             'PName': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Job': Textarea(attrs={'cols': 80, 'rows': 1}),
@@ -31,6 +32,10 @@ class PatientForm(ModelForm):
 
 class AppointmentForm(ModelForm):
     # specify the name of model to use
+    def __init__(self, *args, **kwargs):
+       super(AppointmentForm, self).__init__(*args, **kwargs)
+       self.fields['Fees'].widget.attrs['readonly'] = True
+       self.fields['Pser'].widget.attrs['readonly'] = True
     class Meta:
         model = appointments
         exclude = ['id','AMPM','AMPMCode','Seen','ServNo','DocNo','MoneyNo','ContrC','Cost']
@@ -58,11 +63,13 @@ class FrontEndAppointment(AppointmentForm):
 
 class UpdatePatientForm(ModelForm):
     # specify the name of model to use
+    def __init__(self, *args, **kwargs):
+       super(UpdatePatientForm, self).__init__(*args, **kwargs)
+       self.fields['Debts'].widget.attrs['readonly'] = True
     class Meta:
         model = patient
         exclude = ['id','Pro','Co','DELT','Ser','ContC','ContN','Ref']
         widgets = {
-            'Sex': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Mobile': Textarea(attrs={'cols': 80, 'rows': 1}),
             'PName': Textarea(attrs={'cols': 80, 'rows': 1}),
             'Job': Textarea(attrs={'cols': 80, 'rows': 1}),
@@ -88,7 +95,7 @@ class UpdateExtraInfo(ModelForm):
 class PaymentForm(ModelForm):
     def __init__(self,Pser,*args,**kwargs):
             super (PaymentForm,self ).__init__(*args,**kwargs) # populates the post
-            self.fields['Appointment'].queryset = appointments.objects.filter(Pser=Pser).filter(Q(Paid__lt=F('Fees')) | Q(Paid__isnull=True))
+            self.fields['Appointment'].queryset = appointments.objects.filter(Pser=Pser).filter(Q(Paid__lt=F('Fees')) | Q(Paid__isnull=True) & Q(ShouldPay=True))
     class Meta:
         model= Payments
         fields=['Appointment','Paid_Amount','Date']

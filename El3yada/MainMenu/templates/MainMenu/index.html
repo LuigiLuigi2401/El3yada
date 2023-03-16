@@ -31,8 +31,9 @@
                     <div class="col">
                         <select class="form-select" name="choice">
                               <option>Name</option>
-                              <option>Mobile Phone Number</option>
                               <option>Doctor Name</option>
+                              <option>Mobile Phone Number</option>
+                              <option>Telephone Number</option>
                         </select>
                     </div>
                     <div class="col">
@@ -64,9 +65,15 @@
                         {%endif%}
                   {%elif choice == 'Mobile Phone Number'%}
                         {%if dbchoice == 'Appointments'%}
-                        <caption>List of Appointments where the patient's Phone Number is {{name}}</caption>
+                        <caption>List of Appointments where the patient's Mobile Phone Number is {{name}}</caption>
                         {%else%}
-                        <caption>List of Patients where their phone number is {{name}}</caption>
+                        <caption>List of Patients where their Mobile phone number is {{name}}</caption>
+                        {%endif%}
+                  {%elif choice == 'Telephone Number'%}
+                        {%if dbchoice == 'Appointments'%}
+                        <caption>List of Appointments where the patient's Telephone Number is {{name}}</caption>
+                        {%else%}
+                        <caption>List of Patients where their Telephone number is {{name}}</caption>
                         {%endif%}
                   {%endif%}
                   <tr>
@@ -114,7 +121,7 @@
       <div class="row mb-4 mx-5">
             <div class="col text-center">
                   {%if request.method == "GET" and not request.GET.page == None and request.GET.page|get_type%}
-                        Page {{request.GET.page}}
+                        Page {{page}}
                   {% else %}
                         Page 1
                   {% endif %}
@@ -122,7 +129,7 @@
             <div class="col">
                   <form class="mb-4" method="GET">
                         {%if request.method == "GET" and not request.GET.page == None and request.GET.page|get_type%}
-                              <input type="number" class="form-control text-center" name="page" value='{{request.GET.page}}'>
+                              <input type="number" class="form-control text-center" name="page" value='{{page}}'>
                         {% else %}
                               <input type="number" class="form-control text-center" name="page" value='1'>
                         {% endif %}

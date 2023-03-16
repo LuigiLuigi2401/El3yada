@@ -2,6 +2,7 @@
 {% load static %}
 {%load crispy_forms_tags%}
 {%block content%}
+      
       <h1 class="text-center">Welcome, {{user.first_name}} {{user.last_name}}</h1>
       {%if messages%}
             <div class="container">
@@ -28,4 +29,101 @@
                   </div>
             </form>
       </div>
+      <<script type="text/javascript">
+            Object.prototype.in = function() {
+                  for(var i=0; i<arguments.length; i++)
+                     if(arguments[i] == this) return true;
+                  return false;
+            }
+            let globaldata; 
+            function getOption(){
+                  selectElement1 = document.querySelector('#id_DocName').value;
+                  if (selectElement1 != ''){
+                  URL = "http://127.0.0.1:8000/api/doctors/?doctor=" + selectElement1 + '&format=json';
+                  console.log(URL);
+                  fetch(URL, {
+                        method: 'GET',
+                        headers:{
+                              'Accept': 'application/json',
+                              'X-Requested-With': 'XMLHttpRequest', //Necessary to work with request.is_ajax()
+                        },
+                  })
+                  .then(response => response.json())
+                  .then(data => {
+                        console.log('Success:', data);
+                        console.log('Success:', data[0]['services']);
+                        URL = "http://127.0.0.1:8000/api/services/?service=" + data[0]['services'] + '&format=json';
+                        console.log(URL)
+                        fetch(URL, {
+                              method: 'GET',
+                              headers:{
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest', //Necessary to work with request.is_ajax()
+                              },
+                        })
+                        .then(response=> response.json())
+                        .then(data=>{
+                              console.log('Success:', data);
+                              const brands = data.map(({ name }) => name);
+                              console.log(brands);
+                              selectElement2 = document.querySelector('#id_Arem');
+                              selectElement2.value='';
+                              for(let i = 1;i<selectElement2.length;i++){
+                                    selectElement2.children[i].style.display= 'block';
+                                    if (!brands.includes(selectElement2.children[i].value))
+                                    {
+                                          console.log(selectElement2.children[i].value);
+                                          selectElement2.children[i].style.display= 'none';
+                                    }
+                              }
+                              globaldata = data;
+                              getFees();
+                        })
+                        .catch(error => {
+                              console.error('Error:', error);
+                        });
+                  })
+                  .catch(error => {
+                        console.error('Error:', error);
+                  });
+                  
+            }
+          }
+          function getFees(){
+            selectElement1 = document.getElementById("id_Fees");
+            selectElement2 = document.getElementById("id_Arem");
+            const names = globaldata.map(({ name }) => name);
+            const fees = globaldata.map(({ price }) => price);
+            console.log(selectElement2.value);
+            console.log(selectElement1.value);
+            console.log(names);
+            console.log(fees);
+            if (selectElement2.value != '' && names.includes(selectElement2.value))
+            {
+                  let index = names.indexOf(selectElement2.value);
+                  console.log(index);
+                  console.log(fees[index]);
+                  selectElement1.value = fees[index];
+            }
+            else if (selectElement2.value === '')
+            {
+                  selectElement1.value = '';
+            }
+      }
+          function docReady(fn) {
+            // see if DOM is already available
+            if (document.readyState === "complete" || document.readyState === "interactive") {
+                // call on next available tick
+                setTimeout(fn, 1);
+            } else {
+                document.addEventListener("DOMContentLoaded", fn);
+            }
+        }    
+        docReady(function() {
+            getOption();
+            document.getElementById("id_DocName").addEventListener("change", getOption);
+            document.getElementById("id_Arem").addEventListener("change", getFees);
+        });
+      
+        </script>
 {%endblock%}

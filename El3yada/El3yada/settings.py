@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 import os
 from pathlib import Path
+from datetime import timedelta
 import mimetypes
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,8 +28,8 @@ SECRET_KEY = 'django-insecure-jfg+638$)g9n=1w^un7lpd=e-8cw5%k&l_27y-5a4he!&^k!kw
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
-
+ALLOWED_HOSTS=['*']
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Application definition
 
@@ -39,10 +40,13 @@ INSTALLED_APPS = [
     'MainMenu',
     'crispy_forms',
     'import_export',
+    'corsheaders',
     'rest_framework',
     'debug_toolbar',
     "user_messages",
+    'django_channels_notifications',
     'mathfilters',
+    'rest_framework.authtoken',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -55,8 +59,7 @@ INSTALLED_APPS = [
 IMPORT_EXPORT_USE_TRANSACTIONS = True
 
 INTERNAL_IPS = [
-    "127.0.0.1",
-    '192.168.1.6'
+    '*'
 ]
 
 MIDDLEWARE = [
@@ -68,9 +71,23 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'El3yada.urls'
+
+CONN_MAX_AGE=5000
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication', 
+          # <-- And here
+    ],
+}
+
+SIMPLE_JWT = {
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+}
 
 TEMPLATES = [
     {

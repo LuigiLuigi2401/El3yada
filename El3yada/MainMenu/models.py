@@ -33,6 +33,7 @@ class appointments(models.Model):
     ServiceChoice=[]
     for service in Services.objects.all():
         ServiceChoice.append((service.name,f'({service.name}) {service.price} L.E'))
+    print(ServiceChoice)
     Arem = models.TextField(null=True,blank=True,choices=ServiceChoice,default=ServiceChoice[0][0])
     Arraive = models.BooleanField(null=True,blank=True,default=False)
     DocNo = models.IntegerField(null=True,blank=True)
@@ -67,14 +68,18 @@ class appointments(models.Model):
     MoneyBy = models.TextField(null=True,blank=True,choices=DoneByChoices,default=admin)
     MoneyNo = models.IntegerField(null=True,blank=True)
     def __str__(self):
-        return "{0}, {1}, {2}, {3}".format(self.Aser,self.Pser,self.Aname,self.Adate)
+        return "{0}, {1}, ({2}), {3}, Fees: {4}".format(self.Aser,self.Pser,self.Aname,self.Adate,self.Fees)
 
 class patient(models.Model):
     Ser = models.IntegerField(unique=True,null=True)
     PName = models.TextField(null=True,blank=True)
     PatNote = models.TextField(null=True,blank=True)
     BirthDate = models.DateField(null=True,blank=True)
-    Sex = models.TextField(null=True,blank=True)
+    SEX_CHOICES=[
+        ('M','ذكر'),
+        ('F','أنثى')
+    ]
+    Sex = models.TextField(null=True,blank=True,choices=SEX_CHOICES,default='M')
     Job = models.TextField(null=True,blank=True)
     Mstatus = models.TextField(null=True,blank=True)
     Street = models.TextField(null=True,blank=True)
