@@ -76,10 +76,10 @@ class patient(models.Model):
     PatNote = models.TextField(null=True,blank=True)
     BirthDate = models.DateField(null=True,blank=True)
     SEX_CHOICES=[
-        ('M','ذكر'),
-        ('F','أنثى')
+        ('ذكر','ذكر'),
+        ('أنثى','أنثى')
     ]
-    Sex = models.TextField(null=True,blank=True,choices=SEX_CHOICES,default='M')
+    Sex = models.TextField(null=True,blank=True,choices=SEX_CHOICES,default='ذكر')
     Job = models.TextField(null=True,blank=True)
     Mstatus = models.TextField(null=True,blank=True)
     Street = models.TextField(null=True,blank=True)

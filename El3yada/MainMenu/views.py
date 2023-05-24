@@ -17,6 +17,7 @@ from rest_framework.response import Response
 from django.core.serializers import serialize
 from django.http import JsonResponse,HttpResponse
 import json
+from django.http import Http404
 
 DEBUG=True
 
@@ -476,7 +477,6 @@ class DoctorViewSet(viewsets.ModelViewSet):
         #     queryset = queryset[0].services
         return queryset
 
-
 class ServiceViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows services to be viewed or edited.
@@ -487,26 +487,27 @@ class ServiceViewSet(viewsets.ModelViewSet):
         queryset = Services.objects.all()
         return queryset
     
-
-class AddNewAppointmentViewSet(APIView):
+class AddNewAppointmentView(APIView):
     """
     API endpoint to create appointments
     """
-    authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     def post(self,request):
+        patientbyphone = patient.objects.filter(Mobile=request.data.get('Phone'))
+        format = "%Y-%m-%d"
+        today = date.today().strftime(format)
         data = {
             "Aser": appointments.objects.last().Aser + 1,
-            "Pser": 169,
-            "Aname": '',
+            "Pser": patientbyphone.first().Ser if patientbyphone.exists() and request.data.get('Pser') is None else request.data.get('Pser') if request.data.get('Pser') is not None else  patient.objects.last().Ser + 1,
+            "Aname": request.data.get('Name') if request.data.get('Name') is not None else '',
             "Arraive": False,
-            "Aphone": '',
+            "Aphone": request.data.get('Phone') if request.data.get('Phone') is not None else '',
             "Atel": '',
-            "Adate": '2023-03-16',
-            "DocName": "manal",
-            "Fees": 0,
-            "Arem": "كشف",
-            "DoneBy": "MahmoudAboulfadl"
+            "Adate": today,
+            "DocName": request.data.get('DocName'),
+            "Fees": request.data.get('Fees'),
+            "Arem": request.data.get('Arem'),
+            "DoneBy": request.data.get('DoneBy')
         }
         serializer = AppointmentSerializer(data=data)
         if serializer.is_valid():
@@ -514,14 +515,54 @@ class AddNewAppointmentViewSet(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class EditAppointmentView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def patch(self, request, Aser):
+        try:
+            obj=appointments.objects.get(Aser=Aser)
+        except obj.DoesNotExist:
+            raise Http404
+        data=request.data
+        serializer = AppointmentSerializer(obj,data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class AddNewPatientView(APIView):
+    def post(self,request):
+        data=request.data
+        obj = patient(data)
+        serializer = PatientSerializer(obj)
+        print(obj,serializer)
+        return Response(serializer.data,status=status.HTTP_201_CREATED)
+class EditPatientView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+    def patch(self, request, Ser):
+        try:
+            obj=patient.objects.get(Ser=Ser)
+        except obj.DoesNotExist:
+            raise Http404
+        data=request.data
+        serializer = PatientSerializer(obj,data=data, partial=True)
+        if serializer.is_valid():
+            appointmentlist = appointments.objects.filter(Pser=Ser)
+            for appointment in appointmentlist:
+                appointment.Aname = data['PName']
+                appointment.Aphone = data['Phone']
+                appointment.Atel = data['Mobile']
+                appointment.save()
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-
 class PatientViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows patients to be viewed or edited.
     """
     serializer_class = PatientSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     def get_queryset(self, name=None,phone=None,rowsper=25,page=1,count=None,num=None):
         name = self.request.query_params.get('name')
         phone = self.request.query_params.get('phone')
@@ -540,6 +581,28 @@ class PatientViewSet(viewsets.ModelViewSet):
         if count:
             return [patient(Phone=f'{queryset.num_pages}')]
         return queryset.get_page(page)
+    def create(self, request):
+        print(request.data)
+        format = "%Y-%m-%d"
+        today = date.today().strftime(format)
+        default = {
+            "Ser": patient.objects.last().Ser +1,
+            "PName": "لا اسم",
+            "PatNote": "",
+            "Sex": "ذكر",
+            "Mstatus": "",
+            "Street": "",
+            "Phone": "",
+            "Mobile": "",
+            "Admission": today,
+            "Debts": 0
+        }
+        print({**default,**request.data,**{"Ser": patient.objects.last().Ser +1}})
+        serializer = PatientSerializer(data={**default,**request.data,**{"Ser": patient.objects.last().Ser +1}})
+        serializer.is_valid(raise_exception=True)
+        # serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     """
@@ -580,7 +643,6 @@ class AppointmentDayViewSet(viewsets.ModelViewSet):
         queryset = appointments.objects.filter(Adate=day)
         print(day)
         return queryset
-
 
 class GroupViewSet(viewsets.ModelViewSet):
     """

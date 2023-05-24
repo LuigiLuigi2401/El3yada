@@ -79,6 +79,7 @@ ROOT_URLCONF = 'El3yada.urls'
 CONN_MAX_AGE=5000
 
 REST_FRAMEWORK = {
+    "DATE_INPUT_FORMATS": ["%Y-%M-%d"],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication', 
           # <-- And here
