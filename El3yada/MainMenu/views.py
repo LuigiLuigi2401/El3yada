@@ -14,10 +14,12 @@ from .forms import PatientForm, UpdatePatientForm , UpdateExtraInfo, Appointment
 from datetime import date
 from django.core.paginator import Paginator
 from rest_framework.response import Response
-from django.core.serializers import serialize
+from django.core import serializers
 from django.http import JsonResponse,HttpResponse
 import json
+from datetime import datetime
 from django.http import Http404
+from rest_framework import generics
 
 DEBUG=True
 
@@ -461,21 +463,27 @@ class UserViewSet(viewsets.ModelViewSet):
             queryset = User.objects.filter(username=name) 
         return queryset
 
-class DoctorViewSet(viewsets.ModelViewSet):
+class DoctorView(APIView):
     """
     API endpoint that allows doctors to be viewed or edited.
     """
-    serializer_class = DoctorSerializer
     permission_classes = [permissions.IsAuthenticated]
-    def get_queryset(self,doctor='manal'):
-        doctor = self.request.query_params.get('doctor')
-        if doctor == None:
-            queryset = Doctor.objects.all()
-            return queryset
-        queryset = Doctor.objects.filter(bakcendname=doctor)
-        # else:
-        #     queryset = queryset[0].services
-        return queryset
+    def get(self, request):
+        print(Doctor.objects.first().services.all())
+        # listofdocs = {{doctor.bakcendname:doctor.name}:{service.pk:f"{service.name}({service.price} L.E.)" for service in doctor.services.all()}for doctor in Doctor.objects.all()}
+        dictofdocs = []
+        for doctor in Doctor.objects.all():
+                dictofdocs.append({
+                    'name':doctor.name,
+                    'services':[{
+                        'id':service.pk,
+                        'name':service.name,
+                        'price':service.price
+                    }for service in doctor.services.all()]
+                })
+        print(dictofdocs)
+        return Response(dictofdocs,status=status.HTTP_200_OK)
+
 
 class ServiceViewSet(viewsets.ModelViewSet):
     """
@@ -486,6 +494,33 @@ class ServiceViewSet(viewsets.ModelViewSet):
     def get_queryset(self,service=None):
         queryset = Services.objects.all()
         return queryset
+
+class PaymentsViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows services to be viewed or edited.
+    """
+    serializer_class = PaymentsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    def get_queryset(self):
+        pserrequest = self.request.query_params.get('Pser')
+        docrequest = self.request.query_params.get('Doc')
+        fromrequest = self.request.query_params.get('from')
+        torequest = self.request.query_params.get('to')
+        if docrequest is not None:
+            Doc = int(docrequest)
+        print(docrequest is not None)
+        if pserrequest is not None and docrequest is None and torequest is None and fromrequest is None:
+            Pser = int(pserrequest)
+            queryset = Payments.objects.filter(Appointment__Pser=Pser)
+        elif docrequest is not None:
+            if pserrequest is None and torequest is None and fromrequest is None:
+                queryset = Payments.objects.filter(Appointment__DocName=Doctor.objects.get(pk=Doc).name)
+            elif torequest is not None and fromrequest is not None:
+                queryset = Payments.objects.filter(Appointment__DocName=Doctor.objects.get(pk=Doc).name,Appointment__Adate__range=[fromrequest,torequest])
+        else:
+            queryset = Payments.objects.all()
+        print(queryset)
+        return queryset
     
 class AddNewAppointmentView(APIView):
     """
@@ -493,29 +528,55 @@ class AddNewAppointmentView(APIView):
     """
     permission_classes = [permissions.IsAuthenticated]
     def post(self,request):
-        patientbyphone = patient.objects.filter(Mobile=request.data.get('Phone'))
+        Pser=int(request.data.get('Pser'))
+        serviceId=int(request.data.get('Arem'))
+        pat=patient.objects.get(Ser=Pser)
+        serv=Services.objects.get(pk=serviceId)
         format = "%Y-%m-%d"
-        today = date.today().strftime(format)
-        data = {
-            "Aser": appointments.objects.last().Aser + 1,
-            "Pser": patientbyphone.first().Ser if patientbyphone.exists() and request.data.get('Pser') is None else request.data.get('Pser') if request.data.get('Pser') is not None else  patient.objects.last().Ser + 1,
-            "Aname": request.data.get('Name') if request.data.get('Name') is not None else '',
-            "Arraive": False,
-            "Aphone": request.data.get('Phone') if request.data.get('Phone') is not None else '',
-            "Atel": '',
-            "Adate": today,
-            "DocName": request.data.get('DocName'),
-            "Fees": request.data.get('Fees'),
-            "Arem": request.data.get('Arem'),
-            "DoneBy": request.data.get('DoneBy')
+        data=request.data
+        print(request.data)
+        data = {**data,
+            **{"Aser": appointments.objects.order_by('Aser').last().Aser + 1,
+            "Aname": pat.PName,
+            "Aphone": pat.Phone,
+            "Atel": pat.Mobile,
+            "Arraive":request.data.get('Arraive'),
+            "Adate":datetime.strptime(data['Adate'],format).date(),
+            "Fees": serv.price,
+            "Arem": serv.name,
+            "Paid":0 ,
+            "Cost":serv.cost,
+            "ShouldPay": request.data.get('ShouldPay'),
+            "MoneyBy":''
+            }
         }
+        print(data)
+        
         serializer = AppointmentSerializer(data=data)
         if serializer.is_valid():
+            if request.data.get('ShouldPay'):
+                patToUpdate = patient.objects.get(Ser=Pser)
+                patToUpdate.Debts += serv.price 
+                patToUpdate.save()
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+class GetAppointmentToPayForView(generics.ListAPIView):
+    serializer_class = AppointmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Note the use of `get_queryset()` instead of `self.queryset`
+        queryset = appointments.objects.filter(Pser=self.request.query_params.get('Pser'))
+        listofids = []
+        for app in queryset:
+            if int(app.Fees) != int(app.Paid):
+                listofids.append(app.Aser)
+        queryset = queryset.filter(Aser__in=listofids)
+        return queryset
+        
 class EditAppointmentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def patch(self, request, Aser):
@@ -529,6 +590,63 @@ class EditAppointmentView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class PayDiagnosisAppointmentView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def patch(self, request, Aser):
+        try:
+            obj=appointments.objects.get(Aser=Aser)
+        except obj.DoesNotExist:
+            raise Http404
+        data={
+            'Paid':obj.Fees,
+            'ShouldPay':False,
+            'MoneyBy':request.data.get('username')
+        }
+        serializer = AppointmentSerializer(obj,data=data, partial=True)
+        if serializer.is_valid():
+            newpay = Payments(Appointment=obj,Paid_Amount=obj.Fees,MoneyBy=request.data.get('username'))
+            changepat = patient.objects.get(Ser=obj.Pser)
+            changepat.Debts -= obj.Fees
+            print(changepat.Debts)
+            print(newpay)
+            print(serializer.validated_data)
+            newpay.save()
+            changepat.save()
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class PayServiceAppointmentView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def patch(self, request, Aser):
+        try:
+            obj=appointments.objects.get(Aser=Aser)
+        except obj.DoesNotExist:
+            raise Http404
+        paidhere = request.data.get('Paid_Amount')
+        listofpayments = Payments.objects.filter(Appointment__pk=obj.pk)
+        listmoneyby = set()
+        listmoneyby.add(request.data.get('username'))
+        for pay in listofpayments:
+            listmoneyby.add(pay.MoneyBy)
+        data={
+            'Paid':obj.Paid + paidhere,
+            'ShouldPay':False if obj.Paid + paidhere == obj.Fees else True,
+            'MoneyBy':' , '.join([str(elem) for elem in listmoneyby]) if obj.Paid + paidhere == obj.Fees else ''
+        }
+        serializer = AppointmentSerializer(obj,data=data, partial=True)
+        if serializer.is_valid():
+            newpay = Payments(Appointment=obj,Paid_Amount=paidhere,MoneyBy=request.data.get('username'))
+            changepat = patient.objects.get(Ser=obj.Pser)
+            changepat.Debts -= paidhere
+            print(changepat.Debts)
+            print(newpay)
+            print(serializer.validated_data)
+            newpay.save()
+            changepat.save()
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class AddNewPatientView(APIView):
     def post(self,request):
@@ -538,14 +656,15 @@ class AddNewPatientView(APIView):
         print(obj,serializer)
         return Response(serializer.data,status=status.HTTP_201_CREATED)
 class EditPatientView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     def patch(self, request, Ser):
         try:
             obj=patient.objects.get(Ser=Ser)
         except obj.DoesNotExist:
             raise Http404
         data=request.data
-        serializer = PatientSerializer(obj,data=data, partial=True)
+        format = "%Y-%m-%d"
+        serializer = PatientSerializer(obj,data={**data,**{"Admission":datetime.strptime(data['Admission'],format).date(),"BirthDate":datetime.strptime(data['BirthDate'],format).date()}}, partial=True)
         if serializer.is_valid():
             appointmentlist = appointments.objects.filter(Pser=Ser)
             for appointment in appointmentlist:
@@ -556,13 +675,33 @@ class EditPatientView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AddDebtsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def patch(self, request, Ser,Aser):
+        try:
+            obj=patient.objects.get(Ser=Ser)
+            app = appointments.objects.get(Aser=Aser)
+        except obj.DoesNotExist:
+            raise Http404
+        serializer = PatientSerializer(obj,{'Debts':obj.Debts+app.Fees}, partial=True)
+        if serializer.is_valid():
+            app.Arraive = True
+            app.ShouldPay = True if app.Fees > 0 else False
+            app.MoneyBy = app.DoneBy if app.Fees == 0 else ''
+            app.save()
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
+
+
 class PatientViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows patients to be viewed or edited.
     """
     serializer_class = PatientSerializer
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     def get_queryset(self, name=None,phone=None,rowsper=25,page=1,count=None,num=None):
         name = self.request.query_params.get('name')
         phone = self.request.query_params.get('phone')
@@ -597,10 +736,11 @@ class PatientViewSet(viewsets.ModelViewSet):
             "Admission": today,
             "Debts": 0
         }
-        print({**default,**request.data,**{"Ser": patient.objects.last().Ser +1}})
-        serializer = PatientSerializer(data={**default,**request.data,**{"Ser": patient.objects.last().Ser +1}})
+        # print({**default,**request.data,**{"Ser": patient.objects.last().Ser +1}})
+        serializer = PatientSerializer(data={**request.data,**{"Ser": patient.objects.last().Ser +1,"Admission":datetime.strptime(request.data['Admission'],format).date(),"BirthDate":datetime.strptime(request.data['BirthDate'],format).date()}})
         serializer.is_valid(raise_exception=True)
-        # serializer.save()
+        print(serializer.validated_data)
+        serializer.save()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -624,7 +764,8 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         elif doctor is not None and name is None and num is None:
             queryset = Paginator(appointments.objects.filter(Aname__contains=doctor),rowsper)
         elif num is not None and name is None and doctor is None:
-            queryset = Paginator(appointments.objects.filter(Pser=num),rowsper)
+            queryset = appointments.objects.filter(Pser=num)
+            return queryset
         else:
             queryset = Paginator(appointments.objects.all(),rowsper)
         if count:

@@ -56,6 +56,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
+SESSION_COOKIE_SECURE = False
+
 IMPORT_EXPORT_USE_TRANSACTIONS = True
 
 INTERNAL_IPS = [
@@ -79,7 +81,7 @@ ROOT_URLCONF = 'El3yada.urls'
 CONN_MAX_AGE=5000
 
 REST_FRAMEWORK = {
-    "DATE_INPUT_FORMATS": ["%Y-%M-%d"],
+    "DATE_INPUT_FORMATS": [("%Y-%M-%d"),],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication', 
           # <-- And here
@@ -153,7 +155,7 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)

@@ -11,10 +11,9 @@ class Services(models.Model):
     cost = models.IntegerField(_("Service Cost"),validators=[MinValueValidator(0)])
     description = models.TextField(_("Description"),null=True,blank=True)
     def __str__(self):
-        return "{0} , {1} L.E.".format(self.name,self.price)
+        return "{0} ({1} L.E.)".format(self.name,self.price)
 
 class Doctor(models.Model):
-    bakcendname=models.CharField(_("Backend Name"), max_length=50,null=True)
     name = models.CharField(_("Doctor Name"),max_length=50)
     services = models.ManyToManyField(Services, verbose_name=_("Services"))
     def __str__(self):
@@ -30,42 +29,22 @@ class appointments(models.Model):
     Atel = models.TextField(null=True,blank=True)
     Adate = models.DateField(null=True,blank=True)
     ServNo = models.IntegerField(null=True,blank=True)
-    ServiceChoice=[]
-    for service in Services.objects.all():
-        ServiceChoice.append((service.name,f'({service.name}) {service.price} L.E'))
-    print(ServiceChoice)
-    Arem = models.TextField(null=True,blank=True,choices=ServiceChoice,default=ServiceChoice[0][0])
+    Arem = models.TextField(null=True,blank=True)
     Arraive = models.BooleanField(null=True,blank=True,default=False)
     DocNo = models.IntegerField(null=True,blank=True)
-    DOC_CHOICES = [
-        ('manal', 'دكتورة منال ابو الفضل'),
-        ('tamer', 'دكتور تامر الشربيني'),
-        ('maged', 'د. ماجد احمد عبد الفتاح'),
-        ('3elwy', 'أحمد علوي بشارة'),
-        ('mona', 'د. منى أحمد أبوالفضل'),
-        ('7asna2', 'دكتورة حسناء فكري'),
-        ('ranya', 'دكتورة رانيا غازي'),
-        ('wala2', 'دكتورة ولاء محمود فودة'),
-    ]
-    DoneByChoices=[]
-    for user in User.objects.all():
-        DoneByChoices.append((user.username,user.username))
-    DocChoice=[]
-    for doctor in Doctor.objects.all():
-        DocChoice.append((doctor.bakcendname,doctor.name))
     admin = User.objects.first().username
-    DocName = models.TextField(null=True,blank=True,choices=DocChoice,default=DocChoice[0][0])
+    DocName = models.TextField(null=True,blank=True,default='دكتورة منال ابو الفضل')
     Fees = models.IntegerField(null=True,blank=True)
     Cost = models.IntegerField(null=True,blank=True)
     Paid = models.IntegerField(null=True,blank=True)
     ShouldPay = models.BooleanField(null=True,blank=True,default=True)
     Seen = models.BooleanField(null=True,blank=True)
-    DoneBy = models.TextField(null=True,blank=True,choices=DoneByChoices,default=admin)
+    DoneBy = models.TextField(null=True,blank=True,default=admin)
     Per = models.IntegerField(null=True,blank=True)
     AMPMCode = models.TextField(null=True,blank=True)
     AMPM = models.TextField(null=True,blank=True)
     ContrC = models.IntegerField(null=True,blank=True)
-    MoneyBy = models.TextField(null=True,blank=True,choices=DoneByChoices,default=admin)
+    MoneyBy = models.TextField(null=True,blank=True,default=admin)
     MoneyNo = models.IntegerField(null=True,blank=True)
     def __str__(self):
         return "{0}, {1}, ({2}), {3}, Fees: {4}".format(self.Aser,self.Pser,self.Aname,self.Adate,self.Fees)
@@ -75,11 +54,8 @@ class patient(models.Model):
     PName = models.TextField(null=True,blank=True)
     PatNote = models.TextField(null=True,blank=True)
     BirthDate = models.DateField(null=True,blank=True)
-    SEX_CHOICES=[
-        ('ذكر','ذكر'),
-        ('أنثى','أنثى')
-    ]
-    Sex = models.TextField(null=True,blank=True,choices=SEX_CHOICES,default='ذكر')
+    
+    Sex = models.TextField(null=True,blank=True,default='ذكر')
     Job = models.TextField(null=True,blank=True)
     Mstatus = models.TextField(null=True,blank=True)
     Street = models.TextField(null=True,blank=True)
@@ -100,5 +76,6 @@ class Payments(models.Model):
     Appointment = models.ForeignKey(appointments,on_delete=models.PROTECT)
     Paid_Amount = models.IntegerField(validators=[MinValueValidator(1)])
     Date = models.DateField(default=date.today)
+    MoneyBy = models.TextField(null=True,blank=True)
     def __str__(self):
-        return 'payment for appointment (({0})) on {1} with {2} L.E'.format(self.Appointment,self.Date,self.Paid_Amount)
+        return 'payment for appointment (({0})) on {1} with {2} L.E by {3}'.format(self.Appointment,self.Date,self.Paid_Amount,self.MoneyBy)

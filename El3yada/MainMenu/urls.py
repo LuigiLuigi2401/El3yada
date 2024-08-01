@@ -12,8 +12,8 @@ router.register(r'users', views.UserViewSet)
 router.register(r'groups', views.GroupViewSet)
 router.register(r'appointments', views.AppointmentViewSet,basename='appointmentsAPI')
 router.register(r'patients', views.PatientViewSet,basename='patientsAPI')
-router.register(r'doctors', views.DoctorViewSet,basename='doctorsAPI')
 router.register(r'services', views.ServiceViewSet,basename='servicesAPI')
+router.register(r'payments', views.PaymentsViewSet,basename='paymentsAPI')
 router.register(r'today',views.AppointmentDayViewSet,basename='dayviewAPI')
 
 class DateConverter:
@@ -35,9 +35,14 @@ urlpatterns=[
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/addnewapp/', views.AddNewAppointmentView.as_view(), name='addnewapp'),
+    path('api/getapppay/', views.GetAppointmentToPayForView.as_view(), name='getapppay'),
     path("api/addnewpat/",views.AddNewPatientView.as_view(),name="addnewpat"),
     path('api/editapp/<int:Aser>', views.EditAppointmentView.as_view(), name='editapp'),
+    path('api/paydiag/<int:Aser>', views.PayDiagnosisAppointmentView.as_view(), name='paydiag'),
+    path('api/payserv/<int:Aser>', views.PayServiceAppointmentView.as_view(), name='payserv'),
     path('api/editpat/<int:Ser>', views.EditPatientView.as_view(), name='editpat'),
+    path('api/add_debts/<int:Ser>/<int:Aser>', views.AddDebtsView.as_view(), name='add_debts'),
+    path('api/doctors/', views.DoctorView.as_view(), name='doctors'),
     path("",views.index,name='index'),
     path("adduser/",views.AddUsers,name="addusers"),
     path("addappointment/<int:Ser>",views.appointmentadd,name="addappointments"),

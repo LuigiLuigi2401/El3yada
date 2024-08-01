@@ -22,7 +22,7 @@ class PatientSerializer(serializers.HyperlinkedModelSerializer):
 class AppointmentSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = appointments
-        fields = ['Aser','Pser','Aname','Arraive','Aphone','Atel','Adate','DocName','Fees','Arem','DoneBy']
+        fields = ['Aser','Pser','Aname','Arraive','Aphone','Atel','Adate','DocName','Fees','Cost','Paid','ShouldPay','Arem','DoneBy','MoneyBy']
         
 class ServicesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,3 +32,25 @@ class DoctorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
         fields = '__all__'
+
+class PaymentsSerializer(serializers.ModelSerializer):
+    Appointment_info = serializers.SerializerMethodField()
+    class Meta:
+        model = Payments
+        fields = ['Appointment_info','Paid_Amount','Date','MoneyBy']
+
+    def get_Appointment_info(self, obj):
+        # Access the related model instance using the foreign key relationship
+        related_instance = obj.Appointment
+        related_info = {
+            'Aser': related_instance.Aser,
+            'Pser': related_instance.Pser,
+            'Aname': related_instance.Aname,
+            'DocName': related_instance.DocName,
+            'Arem': related_instance.Arem,
+            # Add more fields as needed
+        }
+
+        # Customize the information you want to include from the related model
+
+        return related_info
