@@ -506,13 +506,15 @@ class PaymentsViewSet(viewsets.ModelViewSet):
         docrequest = self.request.query_params.get('Doc')
         fromrequest = self.request.query_params.get('from')
         torequest = self.request.query_params.get('to')
-        if docrequest is not None:
-            Doc = int(docrequest)
-        print(docrequest is not None)
-        if pserrequest is not None and docrequest is None and torequest is None and fromrequest is None:
-            Pser = int(pserrequest)
-            queryset = Payments.objects.filter(Appointment__Pser=Pser)
+        if pserrequest is not None and docrequest is None:
+            if torequest is not None and fromrequest is not None:
+                Pser = int(pserrequest)
+                queryset = Payments.objects.filter(Appointment__Pser=Pser,Appointment__Adate__range=[fromrequest,torequest])
+            else:
+                Pser = int(pserrequest)
+                queryset = Payments.objects.filter(Appointment__Pser=Pser)
         elif docrequest is not None:
+            Doc = int(docrequest)
             if pserrequest is None and torequest is None and fromrequest is None:
                 queryset = Payments.objects.filter(Appointment__DocName=Doctor.objects.get(pk=Doc).name)
             elif torequest is not None and fromrequest is not None:

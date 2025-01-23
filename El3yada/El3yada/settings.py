@@ -36,6 +36,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 
 INSTALLED_APPS = [
+    'channels',
     'login',
     'MainMenu',
     'crispy_forms',
@@ -55,6 +56,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
+
+ASGI_APPLICATION = 'El3yada.asgi.application'
 
 SESSION_COOKIE_SECURE = False
 
