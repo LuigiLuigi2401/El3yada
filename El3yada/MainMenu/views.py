@@ -574,7 +574,7 @@ class GetAppointmentToPayForView(generics.ListAPIView):
         queryset = appointments.objects.filter(Pser=self.request.query_params.get('Pser'))
         listofids = []
         for app in queryset:
-            if int(app.Fees) != int(app.Paid):
+            if int(app.Fees) != int(app.Paid) and app.Arraive == True:
                 listofids.append(app.Aser)
         queryset = queryset.filter(Aser__in=listofids)
         return queryset
