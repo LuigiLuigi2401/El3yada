@@ -4,8 +4,7 @@ from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator,MinValueValidator
 from datetime import date
 from django.utils.translation import gettext_lazy as _
-from django.contrib.postgres.fields import ArrayField
-
+from django.core.exceptions import ValidationError
 
 
 class Services(models.Model):
@@ -84,48 +83,41 @@ class Payments(models.Model):
         return 'payment for appointment (({0})) on {1} with {2} L.E by {3}'.format(self.Appointment,self.Date,self.Paid_Amount,self.MoneyBy)
 
 class Resource(models.Model):
-    class ResourceType(models.TextChoices):
-        UTILITY = "UTIL", _("Utility Bills")
-        INTERNET = "NET", _("Internet Bill")
-        TELEPHONE = "TEL", _("Telephone Bill")
-        FOODWATER = "FDWTR", _("Food / Water Resupply")
-        TOXICWASTE = "TXC", _("Toxic Wastes")
-        MARKETING = "MRKT", _("Marketing")
-        CONSUMABLE = "CNSM", _("Consumables")
-        MOBILE = "MOB", _("Mobile Phone Bills")
-        NOCATEGORY = "NC", _("Not Categorized")
-
+    ResourceType = [
+            ("UTIL"  , "Utility Bills"),
+            ("NET"   , "Internet Bill"),
+            ("TEL"   , "Telephone Bill"),
+            ("FDWTR" , "Food / Water Resupply"),
+            ("TXC"   , "Toxic Wastes"),
+            ("MRKT"  , "Marketing"),
+            ("CNSM"  , "Consumables"),
+            ("MOB"   , "Mobile Phone Bills"),
+            ("NC"    , "Not Categorized")
+        ]
     Type = models.CharField(
         _("Type of Resource"),
         max_length=5,
         choices=ResourceType,
-        default=ResourceType.NOCATEGORY,
+        default=ResourceType[-1],
     )
-    Name = models.CharField(_("Resource Name"))
-    Counter = ArrayField(models.CharField(max_length=50),size=2,default=['item','items'])
+    Name = models.CharField(_("Resource Name"),max_length=200)
+    Counter = models.CharField(_("Counter"),max_length=50, default='items')
     def __str__(self):
         return '{0} of type "{1}" which is sold by {2}'.format(self.Name,self.Type,self.Counter)
     
 class Supplier(models.Model):
     Name = models.TextField(_("Supplier Name"))
-    ResourcesProvided = models.ManyToManyField(_("Resources Provided"), Resource,on_delete=models.PROTECT)
     def __str__(self):
-        return ''
+        return self.Name
 
 class Expense(models.Model):
-    ItemPaidFor = models.ForeignKey(_("Resource"), Resource,on_delete=models.PROTECT)
-    AmountOfItem = models.DecimalField(_("Amount"))
-    Price = models.DecimalField(_("Price of Resource"))
-    AmountPaid = models.DecimalField(_("Paid"))
-    PaidTo = models.ForeignKey(_("Supplier"), Supplier)
+    Supplier = models.ForeignKey(Supplier,verbose_name="Supplier",on_delete=models.PROTECT)
+    ItemPaidFor = models.ForeignKey(Resource,verbose_name='Resource bought',on_delete=models.PROTECT)
+    AmountOfItem = models.DecimalField(_("Amount"),decimal_places=2,max_digits=20)
+    Price = models.DecimalField(_("Price of Resource"),max_digits=50,decimal_places=2,null=True)
+    AmountPaid = models.DecimalField(_("Paid"),max_digits=50,decimal_places=2)
     Date = models.DateField()
-    ReceiptID = models.CharField(_("ID of Receipt"), max_length=100)
-    
-    def save(self):
-        if self.ItemPaidFor.Type != 'Utilities':
-            self.AmountPaid = self.AmountOfItem * self.Price
-        else:
-            self.Price = self.AmountPaid / self.AmountOfItem
+    ReceiptID = models.CharField(_("ID of Receipt"), max_length=100,unique=True)    
     
     def __str__(self):
-        return 'On {0}, A sum of money, which equals {1} L.E. only, was paid to {2} for {3} {4} of {5}'.format(self.Date,self.AmountPaid,self.PaidTo,self.AmountOfItem,self.ItemPaidFor.Counter,self.ItemPaidFor.Name)
+        return 'On {0}, A sum of money, which equals {1} L.E. only, was paid to {2} for {3} {4} of {5}'.format(self.Date,self.AmountPaid,self.Supplier,self.AmountOfItem,self.ItemPaidFor.Counter,self.ItemPaidFor.Name)
