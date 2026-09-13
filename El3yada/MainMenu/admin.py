@@ -110,10 +110,15 @@ class ExpensesAdmin(ImportExportModelAdmin):
         return f'{obj.Price} L.E. per {displaycounter}'
     get_price.short_description = 'Price of Resource'
     
+    
     def get_amount(self, obj):
         count = obj.ItemPaidFor.Counter
         return f'{obj.AmountOfItem} {count}'
     get_amount.short_description = 'Amount'
     
-    
-    
+@admin.register(Specialization)
+class SpecializationsAdmin(ImportExportModelAdmin):
+    class Meta:
+        model = Specialization
+        exclude = ('id')
+        fields = '__all__'

@@ -6,6 +6,12 @@ from datetime import date
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 
+class Specialization(models.Model):
+    Name = models.CharField(_("Specialization Name"), max_length=200)
+
+    def __str__(self):
+        return self.Name
+
 
 class Services(models.Model):
     name= models.CharField(_("Service Name"), max_length=50)
@@ -18,8 +24,12 @@ class Services(models.Model):
 class Doctor(models.Model):
     name = models.CharField(_("Doctor Name"),max_length=50)
     services = models.ManyToManyField(Services, verbose_name=_("Services"))
+    specialization = models.ForeignKey(Specialization, on_delete=models.SET_NULL, null=True, blank=True, related_name="doctors")
     def __str__(self):
-        return "{0} , {1}".format(self.name,self.services.name)
+        if self.pk:
+            services_names = ", ".join([service.name for service in self.services.all()])
+            return "{0} , [{1}]".format(self.name, services_names)
+        return self.name
 
 
 
@@ -121,3 +131,53 @@ class Expense(models.Model):
     
     def __str__(self):
         return 'On {0}, A sum of money, which equals {1} L.E. only, was paid to {2} for {3} {4} of {5}'.format(self.Date,self.AmountPaid,self.Supplier,self.AmountOfItem,self.ItemPaidFor.Counter,self.ItemPaidFor.Name)
+
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from django.core.cache import cache
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+@receiver([post_save, post_delete], sender=patient)
+def clear_patient_cache(sender, **kwargs):
+    cache.clear()
+
+@receiver([post_save, post_delete], sender=Payments)
+def clear_payments_cache(sender, **kwargs):
+    cache.clear()
+
+@receiver([post_save, post_delete], sender=Doctor)
+def clear_doctor_cache(sender, **kwargs):
+    cache.clear()
+
+
+@receiver([post_save, post_delete], sender=appointments)
+@receiver([post_save, post_delete], sender=patient)
+@receiver([post_save, post_delete], sender=Payments)
+@receiver([post_save, post_delete], sender=Doctor)
+@receiver([post_save, post_delete], sender=Services)
+def clear_cache_and_notify_admin(sender, instance, created=None, **kwargs):
+    cache.clear()
+    channel_layer = get_channel_layer()
+
+    action = getattr(instance, '_action_note', None)
+    if action == "Silenced":
+        return
+        
+    if not action:
+        if created is True:
+            action = f"New {sender.__name__} created"
+        elif created is False:
+            action = f"{sender.__name__} record updated"
+        else:
+            action = f"{sender.__name__} record deleted"
+
+    if channel_layer:
+        async_to_sync(channel_layer.group_send)(
+            'admin_alerts',
+            {
+                'type': 'send_notification',
+                'message': f'Admin Alert: {action}'
+            }
+        )
+

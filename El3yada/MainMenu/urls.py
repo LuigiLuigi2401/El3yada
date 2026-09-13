@@ -15,6 +15,9 @@ router.register(r'patients', views.PatientViewSet,basename='patientsAPI')
 router.register(r'services', views.ServiceViewSet,basename='servicesAPI')
 router.register(r'payments', views.PaymentsViewSet,basename='paymentsAPI')
 router.register(r'today',views.AppointmentDayViewSet,basename='dayviewAPI')
+router.register(r'expenses', views.ExpenseViewSet, basename='expensesAPI')
+router.register(r'suppliers', views.SupplierViewSet, basename='suppliersAPI')
+router.register(r'resources', views.ResourceViewSet, basename='resourcesAPI')
 
 class DateConverter:
       regex = r"\d{4}-\d{1,2}-\d{1,2}"
@@ -34,6 +37,8 @@ urlpatterns=[
     path("api/",include(router.urls)),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/specializations/', views.SpecializationReportView.as_view(), name='specializations_report'),
+    path('api/finance_report/', views.FinanceReportView.as_view(), name='finance_report'),
     path('api/addnewapp/', views.AddNewAppointmentView.as_view(), name='addnewapp'),
     path('api/getapppay/', views.GetAppointmentToPayForView.as_view(), name='getapppay'),
     path("api/addnewpat/",views.AddNewPatientView.as_view(),name="addnewpat"),

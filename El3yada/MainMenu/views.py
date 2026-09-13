@@ -20,7 +20,8 @@ import json
 from datetime import datetime
 from django.http import Http404
 from rest_framework import generics
-
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 DEBUG=True
 
 # Create your views here.
@@ -447,6 +448,7 @@ def payment(request,Pser):
     }
     return render(request,'MainMenu/payment.html',context=context)
 
+@method_decorator(cache_page(60 * 60), name='dispatch')
 class UserViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
@@ -463,6 +465,7 @@ class UserViewSet(viewsets.ModelViewSet):
             queryset = User.objects.filter(username=name) 
         return queryset
 
+@method_decorator(cache_page(60 * 60), name='dispatch')
 class DoctorView(APIView):
     """
     API endpoint that allows doctors to be viewed or edited.
@@ -485,6 +488,7 @@ class DoctorView(APIView):
         return Response(dictofdocs,status=status.HTTP_200_OK)
 
 
+@method_decorator(cache_page(60 * 60), name='dispatch')
 class ServiceViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows services to be viewed or edited.
@@ -587,6 +591,7 @@ class EditAppointmentView(APIView):
         except obj.DoesNotExist:
             raise Http404
         data=request.data
+        obj._action_note = f"Appointment {obj.Aser} for {obj.Aname} was edited"
         serializer = AppointmentSerializer(obj,data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -607,11 +612,12 @@ class PayDiagnosisAppointmentView(APIView):
         serializer = AppointmentSerializer(obj,data=data, partial=True)
         if serializer.is_valid():
             newpay = Payments(Appointment=obj,Paid_Amount=obj.Fees,MoneyBy=request.data.get('username'))
+            newpay._action_note = f"Payment Received: {obj.Fees} L.E. for Diagnosis of {obj.Aname}"
             changepat = patient.objects.get(Ser=obj.Pser)
+            changepat._action_note = f"Debts settled for Patient {changepat.PName}"
             changepat.Debts -= obj.Fees
-            print(changepat.Debts)
-            print(newpay)
-            print(serializer.validated_data)
+            obj._action_note = f"Diagnosis Appointment {obj.Aser} marked as paid"
+            
             newpay.save()
             changepat.save()
             serializer.save()
@@ -639,11 +645,12 @@ class PayServiceAppointmentView(APIView):
         serializer = AppointmentSerializer(obj,data=data, partial=True)
         if serializer.is_valid():
             newpay = Payments(Appointment=obj,Paid_Amount=paidhere,MoneyBy=request.data.get('username'))
+            newpay._action_note = f"Payment Received: {paidhere} L.E. for Services of {obj.Aname}"
             changepat = patient.objects.get(Ser=obj.Pser)
+            changepat._action_note = f"Debts reduced for Patient {changepat.PName}"
             changepat.Debts -= paidhere
-            print(changepat.Debts)
-            print(newpay)
-            print(serializer.validated_data)
+            obj._action_note = f"Service Appointment {obj.Aser} payment logged"
+            
             newpay.save()
             changepat.save()
             serializer.save()
@@ -666,6 +673,7 @@ class EditPatientView(APIView):
             raise Http404
         data=request.data
         format = "%Y-%m-%d"
+        obj._action_note = f"Patient {obj.PName}'s profile was updated"
         serializer = PatientSerializer(obj,data={**data,**{"Admission":datetime.strptime(data['Admission'],format).date(),"BirthDate":datetime.strptime(data['BirthDate'],format).date()}}, partial=True)
         if serializer.is_valid():
             appointmentlist = appointments.objects.filter(Pser=Ser)
@@ -673,6 +681,7 @@ class EditPatientView(APIView):
                 appointment.Aname = data['PName']
                 appointment.Aphone = data['Phone']
                 appointment.Atel = data['Mobile']
+                appointment._action_note = "Silenced"  # Prevent noisy alerts for bulk updates
                 appointment.save()
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -691,6 +700,8 @@ class AddDebtsView(APIView):
             app.Arraive = True
             app.ShouldPay = True if app.Fees > 0 else False
             app.MoneyBy = app.DoneBy if app.Fees == 0 else ''
+            app._action_note = f"Patient {obj.PName} marked as Arrived for Appointment {app.Aser}"
+            obj._action_note = f"Patient {obj.PName} received new Debts"
             app.save()
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -704,24 +715,21 @@ class PatientViewSet(viewsets.ModelViewSet):
     """
     serializer_class = PatientSerializer
     permission_classes = [permissions.IsAuthenticated]
-    def get_queryset(self, name=None,phone=None,rowsper=25,page=1,count=None,num=None):
+    def get_queryset(self):
         name = self.request.query_params.get('name')
         phone = self.request.query_params.get('phone')
-        count= self.request.query_params.get('count')
         num = self.request.query_params.get('num')
-        rowsper = self.request.query_params.get('rowsper') if self.request.query_params.get('rowsper') is not None else 25
-        page = self.request.query_params.get('page') if self.request.query_params.get('page') is not None else 1
-        if name is not None and phone is None and num is None:
-            queryset = Paginator(patient.objects.filter(PName__contains=name),rowsper)
-        elif name is  None and phone is not None and num is None:
-            queryset = Paginator(patient.objects.filter(Phone__contains=phone),rowsper)
-        elif num is not None and name is None and phone is None:
-            queryset = Paginator(patient.objects.filter(Ser=num),rowsper)
-        else:
-            queryset = Paginator(patient.objects.all().order_by('Ser'),rowsper)
-        if count:
-            return [patient(Phone=f'{queryset.num_pages}')]
-        return queryset.get_page(page)
+        
+        queryset = patient.objects.all().order_by('Ser')
+        
+        if num is not None:
+            queryset = queryset.filter(Ser=num)
+        elif name is not None:
+            queryset = queryset.filter(PName__contains=name)
+        elif phone is not None:
+            queryset = queryset.filter(Phone__contains=phone)
+            
+        return queryset
     def create(self, request):
         print(request.data)
         format = "%Y-%m-%d"
@@ -752,27 +760,21 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = AppointmentSerializer
-    def get_queryset(self, name=None,doctor=None,num=None,page=1,rowsper=25,count=None):
+    def get_queryset(self):
         name = self.request.query_params.get('name')
         doctor = self.request.query_params.get('doctor')
         num = self.request.query_params.get('num')
-        getrowsper=self.request.query_params.get('rowsper')
-        getpage=self.request.query_params.get('page')
-        count = self.request.query_params.get('count')
-        if getpage is not None:page=getpage
-        if getrowsper is not None:rowsper=getrowsper
-        if name is not None and doctor is None and num is None:
-            queryset = Paginator(appointments.objects.filter(Aname__contains=name),rowsper)
-        elif doctor is not None and name is None and num is None:
-            queryset = Paginator(appointments.objects.filter(Aname__contains=doctor),rowsper)
-        elif num is not None and name is None and doctor is None:
-            queryset = appointments.objects.filter(Pser=num)
-            return queryset
-        else:
-            queryset = Paginator(appointments.objects.all(),rowsper)
-        if count:
-            return [appointments(Pser=queryset.num_pages)]
-        return queryset.get_page(page)
+        
+        queryset = appointments.objects.all().order_by('-Aser')
+        
+        if num is not None:
+            queryset = queryset.filter(Pser=num)
+        elif name is not None:
+            queryset = queryset.filter(Aname__contains=name)
+        elif doctor is not None:
+            queryset = queryset.filter(Aname__contains=doctor)
+            
+        return queryset
 
 class AppointmentDayViewSet(viewsets.ModelViewSet):
     """
@@ -787,6 +789,28 @@ class AppointmentDayViewSet(viewsets.ModelViewSet):
         print(day)
         return queryset
 
+class ExpenseViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows Expenses to be viewed or edited.
+    """
+    serializer_class = ExpenseSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    def get_queryset(self):
+        return Expense.objects.all().order_by('-Date')
+
+class SupplierViewSet(viewsets.ModelViewSet):
+    serializer_class = SupplierSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Supplier.objects.all()
+
+class ResourceViewSet(viewsets.ModelViewSet):
+    serializer_class = ResourceSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Resource.objects.all()
+
+
+
+@method_decorator(cache_page(60 * 60), name='dispatch')
 class GroupViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
@@ -794,3 +818,157 @@ class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+class SpecializationReportView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from_date = request.query_params.get('from')
+        to_date = request.query_params.get('to')
+        
+        if not from_date or not to_date:
+            return Response({"error": "from and to parameters are required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        data = []
+        specializations = Specialization.objects.all()
+        for spec in specializations:
+            spec_total = 0
+            spec_data = {
+                "SpecializationName": spec.Name,
+                "Doctors": []
+            }
+            doctors = Doctor.objects.filter(specialization=spec)
+            for doc in doctors:
+                doc_total = 0
+                doc_data = {
+                    "DoctorName": doc.name,
+                    "Appointments": []
+                }
+                
+                payments = Payments.objects.filter(Appointment__DocName=doc.name, Appointment__Adate__range=[from_date, to_date])
+                
+                apps_dict = {}
+                for p in payments:
+                    a = p.Appointment
+                    if a.Aser not in apps_dict:
+                        apps_dict[a.Aser] = {
+                            "Aser": a.Aser,
+                            "PatientName": a.Aname,
+                            "Date": a.Adate.strftime("%Y-%m-%d") if a.Adate else None,
+                            "PaidAmount": 0,
+                            "Service": a.Arem
+                        }
+                    apps_dict[a.Aser]["PaidAmount"] += p.Paid_Amount
+                    doc_total += p.Paid_Amount
+                    spec_total += p.Paid_Amount
+                
+                if apps_dict:
+                    doc_data["Appointments"] = list(apps_dict.values())
+                    doc_data["DoctorTotal"] = doc_total
+                    spec_data["Doctors"].append(doc_data)
+            
+            if spec_data["Doctors"]:
+                spec_data["SpecializationTotal"] = spec_total
+                data.append(spec_data)
+                
+        return Response(data, status=status.HTTP_200_OK)
+
+from django.db.models import Sum
+
+class FinanceReportView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from_date = request.query_params.get('from')
+        to_date = request.query_params.get('to')
+        
+        if not from_date or not to_date:
+            return Response({"error": "from and to parameters are required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        appt_page = int(request.query_params.get('appt_page', 1))
+        exp_page = int(request.query_params.get('exp_page', 1))
+        page_size = int(request.query_params.get('page_size', 10))
+            
+        # 1. Gross Income (Payments)
+        payments_qs = Payments.objects.filter(Date__range=[from_date, to_date])
+        gross_income = payments_qs.aggregate(total=Sum('Paid_Amount'))['total'] or 0
+        
+        # 2. Appointment Costs
+        app_qs = appointments.objects.filter(Adate__range=[from_date, to_date], Arraive=True)
+        appointments_cost = app_qs.aggregate(total=Sum('Cost'))['total'] or 0
+        
+        # 3. Supplier / Other Expenses
+        exp_qs = Expense.objects.filter(Date__range=[from_date, to_date])
+        supplier_expenses = exp_qs.aggregate(total=Sum('AmountPaid'))['total'] or 0
+        
+        # Breakdown by Resource Type
+        expenses_breakdown = []
+        for res_type, type_name in Resource.ResourceType:
+            type_qs = exp_qs.filter(ItemPaidFor__Type=res_type)
+            type_total = type_qs.aggregate(total=Sum('AmountPaid'))['total'] or 0
+            if type_total > 0:
+                expenses_breakdown.append({
+                    "type": res_type,
+                    "name": type_name,
+                    "total": type_total
+                })
+        
+        gross_expenses = appointments_cost + supplier_expenses
+        net_profit = gross_income - gross_expenses
+        
+        # Appointments List Pagination
+        from django.core.paginator import Paginator
+        
+        appt_paginator = Paginator(app_qs.order_by('-Adate', '-Aser'), page_size)
+        app_page_obj = appt_paginator.get_page(appt_page)
+        
+        appointments_list = []
+        for app in app_page_obj:
+            appointments_list.append({
+                "Aser": app.Aser,
+                "Pser": app.Pser,
+                "Aname": app.Aname,
+                "DocName": app.DocName,
+                "Arem": app.Arem,
+                "Fees": app.Fees,
+                "Cost": app.Cost,
+                "Paid": app.Paid,
+                "Adate": app.Adate.strftime("%Y-%m-%d") if app.Adate else ""
+            })
+
+        # Expenses List Pagination
+        exp_paginator = Paginator(exp_qs.order_by('-Date', '-id'), page_size)
+        exp_page_obj = exp_paginator.get_page(exp_page)
+        
+        expenses_list = []
+        for exp in exp_page_obj:
+            expenses_list.append({
+                "id": exp.id,
+                "Supplier": exp.Supplier.Name if exp.Supplier else "",
+                "Resource": exp.ItemPaidFor.Name if exp.ItemPaidFor else "",
+                "Amount": exp.AmountOfItem,
+                "Price": exp.Price,
+                "Paid": exp.AmountPaid,
+                "Date": exp.Date.strftime("%Y-%m-%d") if exp.Date else "",
+                "ReceiptID": exp.ReceiptID if hasattr(exp, 'ReceiptID') else ""
+            })
+
+        data = {
+            "gross_income": gross_income,
+            "gross_expenses": gross_expenses,
+            "net_profit": net_profit,
+            "details": {
+                "appointments_cost": appointments_cost,
+                "supplier_expenses": supplier_expenses,
+                "expenses_breakdown": expenses_breakdown,
+                "appointments_list": {
+                    "count": appt_paginator.count,
+                    "results": appointments_list
+                },
+                "expenses_list": {
+                    "count": exp_paginator.count,
+                    "results": expenses_list
+                }
+            }
+        }
+        return Response(data, status=status.HTTP_200_OK)

@@ -54,3 +54,28 @@ class PaymentsSerializer(serializers.ModelSerializer):
         # Customize the information you want to include from the related model
 
         return related_info
+
+class SupplierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Supplier
+        fields = '__all__'
+
+class ResourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Resource
+        fields = '__all__'
+
+class ExpenseSerializer(serializers.ModelSerializer):
+    Supplier_info = serializers.SerializerMethodField()
+    ItemPaidFor_info = serializers.SerializerMethodField()
+
+
+    class Meta:
+        model = Expense
+        fields = ['id', 'Supplier', 'Supplier_info', 'ItemPaidFor', 'ItemPaidFor_info', 'AmountOfItem', 'Price', 'AmountPaid', 'Date', 'ReceiptID']
+
+    def get_Supplier_info(self, obj):
+        return obj.Supplier.Name if obj.Supplier else None
+
+    def get_ItemPaidFor_info(self, obj):
+        return obj.ItemPaidFor.Name if obj.ItemPaidFor else None
